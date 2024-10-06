@@ -5,6 +5,7 @@
 //#include <fstream>
 
 #include "json.hpp"
+#include "data_in.hpp"
 
 int main(int argc, char** argv) {
 	if (argc != 2) {
@@ -20,6 +21,11 @@ int main(int argc, char** argv) {
 
 		// Now pretty-print the value
 		pretty_print(std::cout, jv);
+
+		std::cout << "---\n";
+
+		indata_t tmp{jv};
+		tmp.print();
 	}
 	catch(std::exception const& e) {
 		std::cerr <<

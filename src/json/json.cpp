@@ -18,6 +18,8 @@ json::value parse_file(char const* filename)
 		p.write( buf, nread, ec );
 	} while (! feof(f));
 
+	fclose(f);
+
 	if (ec)
 		return nullptr;
 
