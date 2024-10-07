@@ -33,21 +33,18 @@ int main(int argc, char** argv) {
 		data_in input{jv};
 		//input.print();
 
-		auto points = input.get_points();
+		auto positions = input.get_points();
+		std::vector<Point> points;
+		for (const auto& pos : positions)
+			points.push_back(Point(pos.first, pos.second));
+
 		auto constraints = input.get_constraints();
 		CDT cdt;
-		for (auto it = points.begin(); it != points.end(); it++)
-			cdt.insert(Point(it[0].first, it[0].second));
-		
-		for (auto it = constraints.begin(); it != constraints.end(); it++) {
-			std::array<std::array<uint64_t, 2>, 2> arr;
-			arr[0][0] = points[it[0].first].first;
-			arr[0][1] = points[it[0].first].second;
-			arr[1][0] = points[it[0].second].first;
-			arr[1][1] = points[it[0].second].second;
+		for (const auto& point : points)
+			cdt.insert(point);
+		for (const auto& constraint : constraints)
+			cdt.insert_constraint(points[constraint.first], points[constraint.second]);
 
-			cdt.insert_constraint(Point(arr[0][0], arr[0][1]), Point(arr[1][0], arr[1][1]));
-		}
 		CGAL::draw(cdt);
 	}
 	catch(std::exception const& e) {

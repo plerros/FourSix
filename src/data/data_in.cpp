@@ -74,10 +74,10 @@ void data_in::print()
 {
 	std::cout << this->instance_uid << "\n";
 
-	for (auto it = this->points.begin(); it != this->points.end(); it++)
-		std::cout << "{" << it[0].first << ", " << it[0].second << "}\n";
-	for (auto it = this->region_boundary.begin(); it != this->region_boundary.end(); it++)
-		std::cout << it[0] << "\n";
+	for (const auto& point : this->points)
+		std::cout << "{" << point.first << ", " << point.second << "}\n";
+	for (const auto& point : this->region_boundary)
+		std::cout << point << "\n";
 }
 
 std::vector<std::pair<std::int64_t, std::int64_t>> data_in::get_points()
