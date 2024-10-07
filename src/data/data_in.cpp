@@ -3,7 +3,7 @@
 
 #include "data_in.hpp"
 
-indata_t::indata_t(boost::json::value const& jv)
+data_in::data_in(boost::json::value const& jv)
 {
 	this->instance_uid = jv.at("instance_uid").as_string();
 	assert(jv.at("num_points").as_int64() >= 0);
@@ -29,7 +29,7 @@ skip_points_x:
 
 		size_t i = 0;
 		for (auto it = tmp.begin(); it != tmp.end() && i < this->points.size(); it++, i++)
-			this->points[i][1] = it->as_int64();
+			this->points[i].second = it->as_int64();
 	}
 skip_points_y:
 
@@ -70,12 +70,27 @@ skip_additional_constraints:
 	if (1) {}; // Needed for previous label
 }
 
-void indata_t::print()
+void data_in::print()
 {
 	std::cout << this->instance_uid << "\n";
 
 	for (auto it = this->points.begin(); it != this->points.end(); it++)
-		std::cout << "{" << it[0][0] << ", " << it[0][1] << "}\n";
+		std::cout << "{" << it[0].first << ", " << it[0].second << "}\n";
 	for (auto it = this->region_boundary.begin(); it != this->region_boundary.end(); it++)
 		std::cout << it[0] << "\n";
+}
+
+std::vector<std::pair<std::int64_t, std::int64_t>> data_in::get_points()
+{
+	return this->points;
+}
+
+std::vector<size_t>  data_in::get_boundary()
+{
+	return this->region_boundary;
+}
+
+std::vector<std::pair<size_t, size_t>> data_in::get_constraints()
+{
+	return this->constraints;
 }
