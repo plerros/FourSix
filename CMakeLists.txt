@@ -8,9 +8,11 @@ add_executable(a_cute_triangle
 	src/main.cpp
 	src/json/json.cpp
 	src/data/data_in.cpp
+	src/data/data.cpp
 	)
 
 target_include_directories(a_cute_triangle PRIVATE
+	src
 	src/json
 	src/data
 	)

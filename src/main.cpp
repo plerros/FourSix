@@ -1,18 +1,12 @@
 #include <boost/json.hpp>
 #include <boost/json/src.hpp>
-#include <CGAL/draw_triangulation_2.h>
-#include <CGAL/Constrained_Delaunay_triangulation_2.h>
-#include <CGAL/Exact_predicates_exact_constructions_kernel.h>
 #include <iostream>
+
+#include "configuration.hpp"
 
 #include "json.hpp"
 #include "data_in.hpp"
-
-typedef CGAL::Exact_predicates_exact_constructions_kernel K;
-typedef CGAL::Exact_predicates_tag Itag;
-typedef CGAL::Constrained_Delaunay_triangulation_2<K, CGAL::Default, Itag> CDT;
-typedef CDT::Point Point;
-typedef CDT::Edge Edge;
+#include "data.hpp"
 
 int main(int argc, char** argv) {
 	if (argc != 2) {
@@ -29,23 +23,25 @@ int main(int argc, char** argv) {
 		// Now pretty-print the value
 		//pretty_print(std::cout, jv);
 
-
 		data_in input{jv};
 		//input.print();
 
-		auto positions = input.get_points();
-		std::vector<Point> points;
-		for (const auto& pos : positions)
-			points.push_back(Point(pos.first, pos.second));
-
-		auto constraints = input.get_constraints();
 		CDT cdt;
-		for (const auto& point : points)
+		data_t data{input};
+		for (const auto& point : data.get_points())
 			cdt.insert(point);
-		for (const auto& constraint : constraints)
-			cdt.insert_constraint(points[constraint.first], points[constraint.second]);
+		for (const auto& edge : data.get_boundary())
+			cdt.insert_constraint(edge.first, edge.second);
+		for (const auto& constraint : data.get_constraints())
+			cdt.insert_constraint(constraint.first, constraint.second);
 
+		if (data.inside(Point(1, 1)))
+			std::cout << "Is in\n";
+
+		//CGAL::make_conforming_Delaunay_2(cdt);
+		//CGAL::make_conforming_Gabriel_2(cdt);
 		CGAL::draw(cdt);
+		
 	}
 	catch(std::exception const& e) {
 		std::cerr <<
