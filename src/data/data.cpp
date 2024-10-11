@@ -99,7 +99,7 @@ bool data_t::inside(CDT::Point pt)
 		case CGAL::ON_BOUNDARY:
 			return true;
 		case CGAL::ON_UNBOUNDED_SIDE:
-			return false;
+			return true;
 	}
 	return false;
 }
