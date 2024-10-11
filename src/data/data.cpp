@@ -37,6 +37,35 @@ data_t::data_t(data_in d)
 		
 		this->constraints.push_back(edge);
 	}
+
+	// Remove points outside boundary
+	for (auto it = this->points.begin(); it < this->points.end();) {
+		CDT::Point point = *it;
+		if (this->inside(point)) {
+			it++;
+			continue;
+		}
+		
+		this->points.erase(it);
+		it = this->points.begin();
+	}
+
+	for (auto it = this->constraints.begin(); it < this->constraints.end();) {
+		std::pair<CDT::Point, CDT::Point> edge = *it;
+		int inside = 0;
+		if (std::find(this->points.begin(), this->points.end(), edge.first) != points.end())
+			inside++;
+		if (std::find(this->points.begin(), this->points.end(), edge.second) != points.end())
+			inside++;
+
+		if (inside == 2) {
+			it++;
+			continue;
+		}
+
+		this->constraints.erase(it);
+		it = this->constraints.begin();
+	}
 }
 
 void data_t::print()
