@@ -8,6 +8,12 @@
 #include "data_in.hpp"
 #include "data.hpp"
 
+#include <CGAL/Delaunay_mesh_size_criteria_2.h>
+#include <CGAL/Delaunay_mesher_2.h>
+
+typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
+typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
+
 size_t count_obtuse(CDT *cdt)
 {
 	size_t ret = 0;
@@ -34,9 +40,6 @@ size_t count_obtuse(CDT *cdt)
 
 			switch (angle_type[i]) {
 				case CGAL::OBTUSE:
-					std::cout << "Obtuse" << std::endl;
-					std::cout << i << "[" << edge[i] << "]" << std::endl;
-					std::cout << j << "[" << edge[j] << "]" << std::endl;
 					ret++;
 					break;
 				default:
@@ -45,6 +48,26 @@ size_t count_obtuse(CDT *cdt)
 		}
 	}
 	return ret;
+}
+
+void steiner_random(CDT *cdt)
+{
+	std::vector<Point> random_pts;
+	{
+		CDT cdt2 = *cdt;
+		Mesher mesher(cdt2);
+		mesher.refine_mesh();
+		CGAL::Random_points_in_triangle_mesh_2<Point, CDT> generator(cdt2);
+		std::copy_n(generator, 1000, std::back_inserter(random_pts));
+		assert(random_pts.size() == 1000);
+	}
+
+	for (size_t i = 0; i < random_pts.size(); i++) {
+		CDT cdt2 = *cdt;
+		cdt2.insert(random_pts[i]);
+		if (count_obtuse(&cdt2) < count_obtuse(cdt))
+			cdt->insert(random_pts[i]);
+	}
 }
 
 int main(int argc, char** argv) {
@@ -77,9 +100,10 @@ int main(int argc, char** argv) {
 		//CGAL::make_conforming_Delaunay_2(cdt);
 		//CGAL::make_conforming_Gabriel_2(cdt);
 
+		steiner_random(&cdt);
+
 		std::cout << count_obtuse(&cdt) << std::endl;
-		CGAL::draw(cdt);
-		
+		CGAL::draw(cdt);	
 	}
 	catch(std::exception const& e) {
 		std::cerr <<
