@@ -8,6 +8,45 @@
 #include "data_in.hpp"
 #include "data.hpp"
 
+size_t count_obtuse(CDT *cdt)
+{
+	size_t ret = 0;
+	for (auto it = cdt->finite_faces_begin(); it != cdt->finite_faces_end(); it++) {
+		auto triangle = cdt->triangle(it);
+		std::array <CGAL::Vector_2<K>, 3> edge;
+
+		for (size_t i = 0; i < 3; i++) {
+			size_t j = i + 1;
+			if (j == 3)
+				j = 0;
+			
+			edge[i] = CGAL::Vector_2<K>(triangle.vertex(i), triangle.vertex(j));
+		}
+
+		std::array <int, 3> angle_type;
+
+		for (size_t i = 0; i < 3; i++) {
+			size_t j = i + 1;
+			if (j == 3)
+				j = 0;
+			
+			angle_type[i] = CGAL::angle(-edge[i], edge[j]);
+
+			switch (angle_type[i]) {
+				case CGAL::OBTUSE:
+					std::cout << "Obtuse" << std::endl;
+					std::cout << i << "[" << edge[i] << "]" << std::endl;
+					std::cout << j << "[" << edge[j] << "]" << std::endl;
+					ret++;
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	return ret;
+}
+
 int main(int argc, char** argv) {
 	if (argc != 2) {
 		std::cerr <<
@@ -35,11 +74,10 @@ int main(int argc, char** argv) {
 		for (const auto& constraint : data.get_constraints())
 			cdt.insert_constraint(constraint.first, constraint.second);
 
-		if (data.inside(Point(1, 1)))
-			std::cout << "Is in\n";
-
 		//CGAL::make_conforming_Delaunay_2(cdt);
 		//CGAL::make_conforming_Gabriel_2(cdt);
+
+		std::cout << count_obtuse(&cdt) << std::endl;
 		CGAL::draw(cdt);
 		
 	}
