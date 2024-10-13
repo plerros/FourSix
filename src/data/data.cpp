@@ -6,6 +6,8 @@
 #include "data.hpp"
 #include "data_in.hpp"
 
+#include <CGAL/Polygon_2.h>
+
 data_t::data_t(data_in d)
 {
 	// Convert std::pair<u64 u64> to CDT::Point
@@ -93,13 +95,9 @@ bool data_t::inside(CDT::Point pt)
 	CDT::Point *front = &(this->boundary_pts.front());
 	CDT::Point *back = &(this->boundary_pts.back());
 
-	switch(CGAL::bounded_side_2(front, back, pt, traits)) {
-		case CGAL::ON_BOUNDED_SIDE :
-			return true;
-		case CGAL::ON_BOUNDARY:
-			return true;
-		case CGAL::ON_UNBOUNDED_SIDE:
-			return true;
-	}
-	return false;
+	CGAL::Polygon_2 pgn(traits);
+	for (auto it = this->boundary_pts.begin(); it < this->boundary_pts.end(); it++)
+		pgn.push_back(*it);
+
+	return (! pgn.has_on_unbounded_side(pt));
 }
