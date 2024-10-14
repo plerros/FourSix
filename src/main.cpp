@@ -15,11 +15,14 @@
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
 
-size_t count_obtuse(CDT *cdt)
+size_t count_obtuse(CDT *cdt, data_t *data)
 {
 	size_t ret = 0;
 	for (auto it = cdt->finite_faces_begin(); it != cdt->finite_faces_end(); it++) {
 		auto triangle = cdt->triangle(it);
+		if (!(data->inside(CGAL::centroid(triangle))))
+			continue;
+		
 		std::array <CGAL::Vector_2<K>, 3> edge;
 
 		for (size_t i = 0; i < 3; i++) {
@@ -57,7 +60,7 @@ struct triangulation_t
 	size_t obtuse;
 };
 
-void steiner_random(struct triangulation_t *ptr)
+void steiner_random(struct triangulation_t *ptr, data_t *data)
 {
 	std::vector<Point> random_pts;
 	{
@@ -72,13 +75,13 @@ void steiner_random(struct triangulation_t *ptr)
 	for (size_t i = 0; i < random_pts.size(); i++) {
 		struct triangulation_t current = *ptr;
 		current.cdt.insert(random_pts[i]);
-		current.obtuse = count_obtuse(&(current.cdt));
+		current.obtuse = count_obtuse(&(current.cdt), data);
 		if (current.obtuse < ptr->obtuse)
 			*ptr = current;
 	}
 }
 
-void steiner_projection(struct triangulation_t *ptr)
+void steiner_projection(struct triangulation_t *ptr, data_t *data)
 {
 	std::vector<Point> steiner_pts;
 
@@ -112,7 +115,9 @@ void steiner_projection(struct triangulation_t *ptr)
 					CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
 
 					Point steiner = l.projection(triangle.vertex(j));
-					steiner_pts.push_back(steiner);
+//					std::cout << "steiner " << steiner << std::endl;
+					if (data->inside(steiner))
+						steiner_pts.push_back(steiner);
 					break;
 				}
 				default:
@@ -120,12 +125,44 @@ void steiner_projection(struct triangulation_t *ptr)
 			}
 		}
 	}
-	for (size_t i = 0; i < steiner_pts.size(); i++)
+	for (size_t i = 0; i < steiner_pts.size(); i++) {
+//		std::cout << "adding " << i << std::endl;
 		ptr->cdt.insert(steiner_pts[i]);
-	ptr->obtuse = count_obtuse(&(ptr->cdt));
+	}
+
+//	std::cout << "before " << ptr->obtuse << std::endl;
+	ptr->obtuse = count_obtuse(&(ptr->cdt), data);
+//	std::cout << "after " << ptr->obtuse << std::endl;
+
 }
 
-void steiner_circumcenter(struct triangulation_t *ptr, data_t *data)
+void steiner_centroid(struct triangulation_t *ptr, data_t *data)
+{
+	std::vector<Point> steiner_pts;
+
+	for (auto it = ptr->cdt.finite_faces_begin(); it != ptr->cdt.finite_faces_end(); it++) {
+		auto triangle = ptr->cdt.triangle(it);
+		std::array <CGAL::Vector_2<K>, 3> edge;
+
+		Point steiner = CGAL::centroid(triangle);
+		if (!data->inside(steiner))
+			continue;
+		
+		steiner_pts.push_back(steiner);
+	}
+
+	for (size_t i = 0; i < steiner_pts.size(); i++) {
+		struct triangulation_t current = *ptr;
+		current.cdt.insert(steiner_pts[i]);
+		current.obtuse = count_obtuse(&(current.cdt), data);
+		if (ptr->obtuse > current.obtuse) {
+//			std::cout << "centroid added point" << std::endl;
+			*ptr = current;
+		}
+	}
+}
+
+void steiner_circumcenter(struct triangulation_t *ptr, data_t *data, bool first_run)
 {
 	std::vector<Point> steiner_pts;
 
@@ -143,9 +180,26 @@ void steiner_circumcenter(struct triangulation_t *ptr, data_t *data)
 	for (size_t i = 0; i < steiner_pts.size(); i++) {
 		struct triangulation_t current = *ptr;
 		current.cdt.insert(steiner_pts[i]);
-		current.obtuse = count_obtuse(&(current.cdt));
-		if (ptr->obtuse > current.obtuse)
-			*ptr = current;
+		current.obtuse = count_obtuse(&(current.cdt), data);
+		if (current.obtuse >= ptr->obtuse)
+			continue;
+
+		*ptr = current;
+		if (current.obtuse == 0)
+			return;
+	}
+	if (first_run)
+		return;
+	for (size_t i = 0; i < steiner_pts.size(); i++) {
+		struct triangulation_t current = *ptr;
+		current.cdt.insert(steiner_pts[i]);
+		current.obtuse = count_obtuse(&(current.cdt), data);
+		if (current.obtuse >= ptr->obtuse)
+			continue;
+
+		*ptr = current;
+		if (current.obtuse == 0)
+			return;
 	}
 }
 
@@ -154,11 +208,11 @@ void steiner_mixed(struct triangulation_t *ptr, data_t *data, unsigned int retry
 	struct triangulation_t original = *ptr;
 	for (unsigned int i = 0; i < retry; i++) {
 		struct triangulation_t current = original;
-		steiner_random(&current);
+		steiner_random(&current, data);
 		for (int j = 0; j < 20; j++) {
 			struct triangulation_t current2 = current;
-			steiner_circumcenter(&current2, data);
-			steiner_projection(&(current2));
+			steiner_circumcenter(&current2, data, true);
+			steiner_projection(&current2, data);
 			if (current.obtuse > current2.obtuse)
 				current = current2;
 		}
@@ -167,38 +221,107 @@ void steiner_mixed(struct triangulation_t *ptr, data_t *data, unsigned int retry
 	}
 }
 
-void steiner_mixed_recursive(struct triangulation_t *ptr, data_t *data, unsigned int depth)
+enum steiner_method_enum {st_circumcenter, st_projection, st_centroid, st_random};
+
+void steiner_mixed_recursive(struct triangulation_t *ptr, data_t *data, unsigned int depth, bool first_run)
 {
+/*
+	for (unsigned int i = 0; i < depth; i++)
+		std::cout << " ";
+	std::cout << depth << std::endl;
+*/
 	if (depth == 0)
+		return;
+	if (ptr->obtuse == 0)
 		return;
 
 	struct triangulation_t best = *ptr;
 	struct triangulation_t current = *ptr;
-	steiner_circumcenter(&current, data);
-	steiner_mixed_recursive(&current, data, depth - 1);
-	if (current.obtuse == 0) {
-		*ptr = current;
-		return;
-	}
-	if (best.obtuse > current.obtuse)
+
+	steiner_circumcenter(&current, data, first_run);
+	if (first_run && (current.obtuse < best.obtuse))
 		best = current;
+	if (!first_run && (current.obtuse <= best.obtuse))
+		best = current;
+	if (best.obtuse == 0)
+		goto out;
+
+	if (current.obtuse != ptr->obtuse) {
+		steiner_mixed_recursive(&current, data, depth - 1, first_run);
+		if (first_run && (current.obtuse < best.obtuse))
+			best = current;
+		if (!first_run && (current.obtuse <= best.obtuse))
+			best = current;
+		if (best.obtuse == 0)
+			goto out;
+	}
 
 	current = *ptr;
-	steiner_projection(&current);
-	steiner_mixed_recursive(&current, data, depth - 1);
+	steiner_projection(&current, data);
+	if (first_run && (current.obtuse < best.obtuse))
+		best = current;
+	if (!first_run && (current.obtuse <= best.obtuse))
+		best = current;
+	if (best.obtuse == 0)
+		goto out;
+	if (current.obtuse != ptr->obtuse) {
+		steiner_mixed_recursive(&current, data, depth - 1, first_run);
+		if (first_run && (current.obtuse < best.obtuse))
+			best = current;
+		if (!first_run && (current.obtuse <= best.obtuse))
+			best = current;
+		if (best.obtuse == 0)
+			goto out;
+	}
+
+	// If we improved the situation, skip the bad methods
+	if (first_run && (best.obtuse != ptr->obtuse)) {
+		*ptr = best;
+		return;
+	}
+
+	// Bad methods
+	current = *ptr;
+	steiner_centroid(&current, data);
+	if (first_run && (current.obtuse < best.obtuse))
+		best = current;
+	if (!first_run && (current.obtuse <= best.obtuse))
+		best = current;
+	if (best.obtuse == 0)
+		goto out;
+	if (current.obtuse != ptr->obtuse) {
+		steiner_mixed_recursive(&current, data, depth - 1, first_run);
+		if (first_run && (current.obtuse < best.obtuse))
+			best = current;
+		if (!first_run && (current.obtuse <= best.obtuse))
+			best = current;
+		if (best.obtuse == 0)
+			goto out;
+	}
+
+	current = *ptr;
+	steiner_random(&current, data);
 	if (current.obtuse == 0) {
 		*ptr = current;
 		return;
 	}
-	if (best.obtuse > current.obtuse)
+	if (first_run && (current.obtuse < best.obtuse))
 		best = current;
-/*
-	current = *ptr;
-	steiner_random(&current);
-	steiner_mixed_recursive(&current, data, depth - 1);
-	if (best.obtuse > current.obtuse)
+	if (!first_run && (current.obtuse <= best.obtuse))
 		best = current;
-*/
+	if (best.obtuse == 0)
+		goto out;
+	if (current.obtuse != ptr->obtuse) {
+		steiner_mixed_recursive(&current, data, depth - 1, first_run);
+		if (first_run && (current.obtuse < best.obtuse))
+			best = current;
+		if (!first_run && (current.obtuse <= best.obtuse))
+			best = current;
+		if (best.obtuse == 0)
+			goto out;
+	}
+
+out:
 	*ptr = best;
 }
 
@@ -231,7 +354,8 @@ int main(int argc, char** argv) {
 
 		struct triangulation_t triangulation;
 		triangulation.cdt = cdt;
-		triangulation.obtuse = count_obtuse(&cdt); 
+		triangulation.obtuse = count_obtuse(&cdt, &data); 
+		std::cout << triangulation.obtuse << std::endl;
 
 		//CGAL::make_conforming_Delaunay_2(cdt);
 		//CGAL::make_conforming_Gabriel_2(cdt);
@@ -243,7 +367,12 @@ int main(int argc, char** argv) {
 		auto t1 = high_resolution_clock::now();
 
 		//steiner_mixed(&triangulation, &data, 5);
-		steiner_mixed_recursive(&triangulation, &data, triangulation.obtuse);
+
+		unsigned int depth = triangulation.obtuse;
+		if (depth > 0 && depth < 5)
+			depth = 5;
+		steiner_mixed_recursive(&triangulation, &data, depth, true);
+		steiner_mixed_recursive(&triangulation, &data, depth, false);
 
 		auto t2 = high_resolution_clock::now();
 		auto ms_int = duration_cast<milliseconds>(t2 - t1);
@@ -251,7 +380,7 @@ int main(int argc, char** argv) {
 		std::cout << ms_int.count() << "ms\n";
 		std::cout << ms_double.count() << "ms\n";
 
-		std::cout << count_obtuse(&(triangulation.cdt)) << std::endl;
+		std::cout << count_obtuse(&(triangulation.cdt), &data) << std::endl;
 		CGAL::draw(triangulation.cdt);	
 	}
 	catch(std::exception const& e) {
