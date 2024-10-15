@@ -115,7 +115,6 @@ void steiner_projection(struct triangulation_t *ptr, data_t *data)
 					CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
 
 					Point steiner = l.projection(triangle.vertex(j));
-//					std::cout << "steiner " << steiner << std::endl;
 					if (data->inside(steiner))
 						steiner_pts.push_back(steiner);
 					break;
@@ -125,14 +124,10 @@ void steiner_projection(struct triangulation_t *ptr, data_t *data)
 			}
 		}
 	}
-	for (size_t i = 0; i < steiner_pts.size(); i++) {
-//		std::cout << "adding " << i << std::endl;
+	for (size_t i = 0; i < steiner_pts.size(); i++)
 		ptr->cdt.insert(steiner_pts[i]);
-	}
 
-//	std::cout << "before " << ptr->obtuse << std::endl;
 	ptr->obtuse = count_obtuse(&(ptr->cdt), data);
-//	std::cout << "after " << ptr->obtuse << std::endl;
 
 }
 
@@ -225,11 +220,12 @@ enum steiner_method_enum {st_circumcenter, st_projection, st_centroid, st_random
 
 void steiner_mixed_recursive(struct triangulation_t *ptr, data_t *data, unsigned int depth, bool first_run)
 {
-/*
-	for (unsigned int i = 0; i < depth; i++)
-		std::cout << " ";
-	std::cout << depth << std::endl;
-*/
+	if (PRINT_RECURSION_TREE) {
+		for (unsigned int i = 0; i < depth; i++)
+			std::cout << " ";
+		std::cout << depth << std::endl;
+	}
+
 	if (depth == 0)
 		return;
 	if (ptr->obtuse == 0)
@@ -238,90 +234,45 @@ void steiner_mixed_recursive(struct triangulation_t *ptr, data_t *data, unsigned
 	struct triangulation_t best = *ptr;
 	struct triangulation_t current = *ptr;
 
-	steiner_circumcenter(&current, data, first_run);
-	if (first_run && (current.obtuse < best.obtuse))
-		best = current;
-	if (!first_run && (current.obtuse <= best.obtuse))
-		best = current;
-	if (best.obtuse == 0)
-		goto out;
 
-	if (current.obtuse != ptr->obtuse) {
-		steiner_mixed_recursive(&current, data, depth - 1, first_run);
+	for (int method = st_circumcenter; method <= st_random; method ++) {
+		current = *ptr;
+		switch(method) {
+			case st_circumcenter:
+				steiner_circumcenter(&current, data, first_run);
+				break;
+			case st_projection:
+				steiner_projection(&current, data);
+				break;
+			case st_centroid:
+				if (first_run && (best.obtuse != ptr->obtuse))
+					break;
+				steiner_centroid(&current, data);
+				break;
+			case st_random:
+				if (first_run && (best.obtuse != ptr->obtuse))
+					break;
+				steiner_random(&current, data);
+				break;
+		}
+
 		if (first_run && (current.obtuse < best.obtuse))
 			best = current;
 		if (!first_run && (current.obtuse <= best.obtuse))
 			best = current;
 		if (best.obtuse == 0)
-			goto out;
-	}
+			break;
 
-	current = *ptr;
-	steiner_projection(&current, data);
-	if (first_run && (current.obtuse < best.obtuse))
-		best = current;
-	if (!first_run && (current.obtuse <= best.obtuse))
-		best = current;
-	if (best.obtuse == 0)
-		goto out;
-	if (current.obtuse != ptr->obtuse) {
-		steiner_mixed_recursive(&current, data, depth - 1, first_run);
-		if (first_run && (current.obtuse < best.obtuse))
-			best = current;
-		if (!first_run && (current.obtuse <= best.obtuse))
-			best = current;
-		if (best.obtuse == 0)
-			goto out;
+		if (current.obtuse != ptr->obtuse) {
+			steiner_mixed_recursive(&current, data, depth - 1, first_run);
+			if (first_run && (current.obtuse < best.obtuse))
+				best = current;
+			if (!first_run && (current.obtuse <= best.obtuse))
+				best = current;
+			if (best.obtuse == 0)
+				break;
+		}
 	}
-
-	// If we improved the situation, skip the bad methods
-	if (first_run && (best.obtuse != ptr->obtuse)) {
-		*ptr = best;
-		return;
-	}
-
-	// Bad methods
-	current = *ptr;
-	steiner_centroid(&current, data);
-	if (first_run && (current.obtuse < best.obtuse))
-		best = current;
-	if (!first_run && (current.obtuse <= best.obtuse))
-		best = current;
-	if (best.obtuse == 0)
-		goto out;
-	if (current.obtuse != ptr->obtuse) {
-		steiner_mixed_recursive(&current, data, depth - 1, first_run);
-		if (first_run && (current.obtuse < best.obtuse))
-			best = current;
-		if (!first_run && (current.obtuse <= best.obtuse))
-			best = current;
-		if (best.obtuse == 0)
-			goto out;
-	}
-
-	current = *ptr;
-	steiner_random(&current, data);
-	if (current.obtuse == 0) {
-		*ptr = current;
-		return;
-	}
-	if (first_run && (current.obtuse < best.obtuse))
-		best = current;
-	if (!first_run && (current.obtuse <= best.obtuse))
-		best = current;
-	if (best.obtuse == 0)
-		goto out;
-	if (current.obtuse != ptr->obtuse) {
-		steiner_mixed_recursive(&current, data, depth - 1, first_run);
-		if (first_run && (current.obtuse < best.obtuse))
-			best = current;
-		if (!first_run && (current.obtuse <= best.obtuse))
-			best = current;
-		if (best.obtuse == 0)
-			goto out;
-	}
-
-out:
 	*ptr = best;
 }
 
@@ -359,26 +310,30 @@ int main(int argc, char** argv) {
 
 		//CGAL::make_conforming_Delaunay_2(cdt);
 		//CGAL::make_conforming_Gabriel_2(cdt);
-		//steiner_mixed(&cdt, &data, 5);
+		
+		// Runtime start
 		using std::chrono::high_resolution_clock;
 		using std::chrono::duration_cast;
 		using std::chrono::duration;
 		using std::chrono::milliseconds;
 		auto t1 = high_resolution_clock::now();
 
-		//steiner_mixed(&triangulation, &data, 5);
 
+		//steiner_mixed(&triangulation, &data, 5);
 		unsigned int depth = triangulation.obtuse;
 		if (depth > 0 && depth < 5)
 			depth = 5;
 		steiner_mixed_recursive(&triangulation, &data, depth, true);
 		steiner_mixed_recursive(&triangulation, &data, depth, false);
 
+
+		// Runtime end
 		auto t2 = high_resolution_clock::now();
 		auto ms_int = duration_cast<milliseconds>(t2 - t1);
 		duration<double, std::milli> ms_double = t2 - t1;
 		std::cout << ms_int.count() << "ms\n";
 		std::cout << ms_double.count() << "ms\n";
+
 
 		std::cout << count_obtuse(&(triangulation.cdt), &data) << std::endl;
 		CGAL::draw(triangulation.cdt);	
