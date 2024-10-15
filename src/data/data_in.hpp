@@ -13,6 +13,7 @@ class data_in
 	public:
 		data_in(boost::json::value const& jv);
 		void print();
+		std::string get_instance_uid();
 		std::vector<std::pair<std::int64_t, std::int64_t>> get_points();
 		std::vector<size_t>  get_boundary();
 		std::vector<std::pair<size_t, size_t>> get_constraints();

@@ -80,6 +80,11 @@ void data_in::print()
 		std::cout << point << "\n";
 }
 
+std::string data_in::get_instance_uid()
+{
+	return this->instance_uid;
+}
+
 std::vector<std::pair<std::int64_t, std::int64_t>> data_in::get_points()
 {
 	return this->points;

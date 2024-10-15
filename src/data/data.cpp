@@ -3,16 +3,23 @@
 
 #include "configuration.hpp"
 
+#include <CGAL/Quotient.h>
+#include <CGAL/Polygon_2.h>
+#include <CGAL/Exact_integer.h>
+
 #include "data.hpp"
 #include "data_in.hpp"
 
-#include <CGAL/Polygon_2.h>
-
 data_t::data_t(data_in d)
 {
+	this->instance_uid = d.get_instance_uid();
 	// Convert std::pair<u64 u64> to CDT::Point
-	for (const auto& point : d.get_points())
-		this->points.push_back(Point(point.first, point.second));
+	for (const auto& point : d.get_points()) {
+		K::FT x(CGAL::Exact_integer(point.first));
+		K::FT y(CGAL::Exact_integer(point.second));
+
+		this->points.push_back(Point(x, y));
+	}
 
 	auto const boundary = d.get_boundary();
 
@@ -72,6 +79,11 @@ data_t::data_t(data_in d)
 
 void data_t::print()
 {
+}
+
+std::string data_t::get_instance_uid()
+{
+	return this->instance_uid;
 }
 
 std::vector<CDT::Point> data_t::get_points()
