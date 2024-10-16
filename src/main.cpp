@@ -12,10 +12,9 @@
 #include "triangulation.hpp"
 
 int main(int argc, char** argv) {
-	if (argc != 2) {
-		std::cerr <<
-			"Usage: HalfTurn <input name>"
-			<< std::endl;
+	if (argc != 2 && argc != 3) {
+		std::cerr << "Usage: HalfTurn <input json>" << std::endl;
+		std::cerr << "       HalfTurn <input json> <output json>" << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -60,9 +59,16 @@ int main(int argc, char** argv) {
 
 		data_out output(&data, &triangulation);
 
-		pretty_print(std::cout, output.get_jsonvalue());
-		CGAL::draw(triangulation.get_cdt());	
+		CGAL::draw(triangulation.get_cdt());
 
+		if (argc == 3) {
+			std::ofstream outfile;
+			outfile.open(argv[2]);
+			pretty_print(outfile, output.get_jsonvalue());
+			outfile.close();
+		} else {
+			pretty_print(std::cout, output.get_jsonvalue());
+		}
 	}
 	catch(std::exception const& e) {
 		std::cerr <<
