@@ -14,7 +14,7 @@
 int main(int argc, char** argv) {
 	if (argc != 2) {
 		std::cerr <<
-			"Usage: pretty <filename>"
+			"Usage: HalfTurn <input name>"
 			<< std::endl;
 		return EXIT_FAILURE;
 	}

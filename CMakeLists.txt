@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.10)
 
-project(a_cute_triangle)
+project(HalfTurn)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
 
-add_executable(a_cute_triangle
+add_executable(HalfTurn
 	src/data/data_in.cpp
 	src/data/data.cpp
 	src/data/data_out.cpp
@@ -13,14 +13,14 @@ add_executable(a_cute_triangle
 	src/triangulation/triangulation.cpp
 	)
 
-target_include_directories(a_cute_triangle PRIVATE
+target_include_directories(HalfTurn PRIVATE
 	src
 	src/data
 	src/json
 	src/triangulation
 	)
 
-target_link_libraries(a_cute_triangle
+target_link_libraries(HalfTurn
 	CGAL::CGAL
 	CGAL::CGAL_Basic_viewer
 	)
