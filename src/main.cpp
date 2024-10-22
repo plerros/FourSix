@@ -13,8 +13,8 @@
 
 int main(int argc, char** argv) {
 	if (argc != 2 && argc != 3) {
-		std::cerr << "Usage: HalfTurn <input json>" << std::endl;
-		std::cerr << "       HalfTurn <input json> <output json>" << std::endl;
+		std::cerr << "Usage: FourSix <input json>" << std::endl;
+		std::cerr << "       FourSix <input json> <output json>" << std::endl;
 		return EXIT_FAILURE;
 	}
 
@@ -40,11 +40,12 @@ int main(int argc, char** argv) {
 
 
 		//steiner_mixed(&triangulation, &data, 5);
-		unsigned int depth = triangulation.get_obtuse();
+		unsigned int depth = triangulation.get_obtuse() / 3;
 		if (depth > 0 && depth < 5)
 			depth = 5;
-		triangulation.steiner_mixed_recursive(depth, true);
-		triangulation.steiner_mixed_recursive(depth, false);
+		triangulation.steiner_mixed_recursive(depth);
+		triangulation.set_progression_check(progression_less_equal);
+		triangulation.steiner_mixed_recursive(depth);
 
 
 		// Runtime end
