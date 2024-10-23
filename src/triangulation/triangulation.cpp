@@ -6,8 +6,7 @@
 #include <CGAL/Polygon_mesh_processing/refine.h>
 
 #include "triangulation.hpp"
-#include <CGAL/draw_polygon_2.h> 
-#include <CGAL/centroid.h>
+#include "obtuse_polygon.hpp"
 
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
@@ -155,16 +154,12 @@ void triangulation_t::steiner_polygon_centroid()
 	std::vector<K::Triangle_2> visited;
 	std::vector<CDT::Point> steiner_pts;
 
-	std::vector<K::Triangle_2> obtuse_sequence;
 	while (1) {
-		obtuse_sequence.clear();
+		obtuse_polygon_t obtuse_polygon(this->data);
 		// Initialize first element
 		for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 			K::Triangle_2 triangle = this->cdt.triangle(it);
 			if (std::find(visited.begin(), visited.end(), triangle) != visited.end())
-				continue;
-
-			if (!this->data->inside(CGAL::centroid(triangle)))
 				continue;
 
 			if (!is_obtuse(triangle))
@@ -189,12 +184,12 @@ void triangulation_t::steiner_polygon_centroid()
 				obtuse_neighbors.push_back(tmp);
 			}
 			if (obtuse_neighbors.size() == 1) {
-				obtuse_sequence.push_back(triangle);
+				obtuse_polygon.try_insert(triangle);
 				visited.push_back(triangle);
 				break;
 			}
 		}
-		if (obtuse_sequence.size() == 0)
+		if (obtuse_polygon.size() == 0)
 			break;
 
 		// Continue the sequence:
@@ -202,19 +197,17 @@ void triangulation_t::steiner_polygon_centroid()
 		while (!exit_flag) {
 			std::vector<K::Triangle_2> visited_before = visited;
 			for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
-				assert(obtuse_sequence.size() > 0);
+				assert(obtuse_polygon.size() > 0);
 				K::Triangle_2 triangle = this->cdt.triangle(it);
 				if (std::find(visited.begin(), visited.end(), triangle) != visited.end())
 					continue;
 
-				if (!this->data->inside(CGAL::centroid(triangle)))
+				if(!obtuse_polygon.try_insert(triangle))
 					continue;
 
-				if (!is_obtuse(triangle))
-					continue;
+				visited.push_back(triangle);
 
 				std::vector<K::Triangle_2> obtuse_neighbors;
-				bool connected = false;
 				for (size_t i = 0; i < 3; i++) {
 					auto neighbor = it->neighbor(i);
 					if (this->cdt.is_infinite(neighbor))
@@ -227,104 +220,24 @@ void triangulation_t::steiner_polygon_centroid()
 					if (!this->data->inside(CGAL::centroid(tmp)))
 						continue;
 
-					if (tmp == obtuse_sequence.back())
-						connected = true;
 					obtuse_neighbors.push_back(tmp);
 				}
-				if (!connected)
-					continue;
 
-				assert(obtuse_neighbors.size() != 0);
 				if (obtuse_neighbors.size() == 1) {
-					obtuse_sequence.push_back(triangle);
-					visited.push_back(triangle);
 					exit_flag = true;
-					break;
 				}
 				if (obtuse_neighbors.size() == 2) {
-					obtuse_sequence.push_back(triangle);
-					visited.push_back(triangle);
-					break;
 				}
 				if (obtuse_neighbors.size() == 3){
-					obtuse_sequence.push_back(triangle);
-					visited.push_back(triangle);
 					exit_flag = true;
-					break;
 				}
 			}
-			assert(visited_before != visited);
+			//assert(visited_before != visited);
+			if (visited_before == visited)
+				break;
 		}
 
-		assert(obtuse_sequence.size() > 1);
-		// Generate the boundary
-		std::vector<CDT::Point> pointsA;
-		std::vector<CDT::Point> pointsB;
-
-		K::Triangle_2 *prev = NULL;
-		K::Triangle_2 prev2;
-		while (obtuse_sequence.size() != 0) {
-			K::Triangle_2 triangle = obtuse_sequence.back();
-			obtuse_sequence.pop_back();
-			size_t i = 0;
-			size_t j = 1;
-			size_t k = 2;
-
-			assert(obtuse_sequence.size() != 0 || prev != NULL);
-			for (; i < 3; i++) {
-				j = i + 1;
-				if (j == 3)
-					j = 0;
-				k = j + 1;
-				if (k == 3)
-					k = 0;
-				if (
-					(obtuse_sequence.size() > 0)
-					&& is_in_triangle(obtuse_sequence.back(), triangle.vertex(i))
-					&& is_in_triangle(obtuse_sequence.back(), triangle.vertex(j))
-				)
-					break;
-				
-				if (
-					(obtuse_sequence.size() == 0)
-					&& is_in_triangle(*prev, triangle.vertex(i))
-					&& is_in_triangle(*prev, triangle.vertex(j))
-				)
-					break;
-			}
-			if (prev == NULL) {
-				prev = &prev2;
-				pointsA.push_back(triangle.vertex(k));
-				pointsA.push_back(triangle.vertex(i));
-				pointsB.push_back(triangle.vertex(j));
-			} else {
-				if (is_in_triangle(*prev, triangle.vertex(i)))
-					pointsB.push_back(triangle.vertex(k));
-				else
-					pointsA.push_back(triangle.vertex(k));
-
-				pointsA.push_back(triangle.vertex(i));
-				pointsB.push_back(triangle.vertex(j));
-			}
-			*prev = triangle;
-
-		}
-		std::reverse(pointsB.begin(), pointsB.end());
-		std::vector<CDT::Point> boundary;
-		boundary.reserve(pointsA.size() + pointsB.size());
-		boundary.insert(boundary.end(), pointsA.begin(), pointsA.end());
-		boundary.insert(boundary.end(), pointsB.begin(), pointsB.end());
-
-		/*
-		K traits = K();
-		CGAL::Polygon_2 pgn(traits);
-		for (auto it = boundary.begin(); it < boundary.end(); it++)
-			pgn.push_back(*it);
-		
-		CGAL::draw(pgn);
-		*/
-
-		CDT::Point steiner_pt = CGAL::centroid(boundary.begin(), boundary.end(), CGAL::Dimension_tag<0>());
+		CDT::Point steiner_pt = obtuse_polygon.get_steiner();
 		steiner_pts.push_back(steiner_pt);
 	}
 	for (size_t i = 0; i < steiner_pts.size(); i++) {
@@ -575,7 +488,7 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 void triangulation_t::steiner_benchmark(unsigned int depth)
 {
 	for (unsigned int i = 0; i < depth; i++)
-		this->steiner_centroid();
+		this->steiner_polygon_centroid();
 }
 
 std::vector<std::pair<std::string, std::string>> triangulation_t::get_steiner_str()

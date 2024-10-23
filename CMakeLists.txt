@@ -10,6 +10,7 @@ add_executable(FourSix
 	src/data/data_out.cpp
 	src/json/json.cpp
 	src/main.cpp
+	src/obtuse_polygon/obtuse_polygon.cpp
 	src/triangulation/triangulation.cpp
 	)
 
@@ -18,6 +19,7 @@ target_include_directories(FourSix PRIVATE
 	src/data
 	src/json
 	src/triangulation
+	src/obtuse_polygon
 	)
 
 target_link_libraries(FourSix
