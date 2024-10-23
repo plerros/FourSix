@@ -14,7 +14,5 @@ typedef CGAL::Delaunay_mesh_vertex_base_2<K>                Vb;
 typedef CGAL::Delaunay_mesh_face_base_2<K>                  Fb;
 typedef CGAL::Triangulation_data_structure_2<Vb, Fb>        Tds;
 typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
-typedef CDT::Point Point;
-typedef CDT::Edge Edge;
 
 #define PRINT_RECURSION_TREE true

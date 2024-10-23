@@ -23,11 +23,14 @@ class triangulation_t
 		// Steiner operations
 		void steiner_centroid();
 		void steiner_circumcenter();
+		void steiner_polygon_centroid();
 		void steiner_projection();
 		void steiner_random();
 		void steiner_neighbor_random();
 		void steiner_mixed(unsigned int retries);
 		void steiner_mixed_recursive(unsigned int depth);
+
+		void steiner_benchmark(unsigned int depth);
 
 		std::vector<std::pair<std::string, std::string>> get_steiner_str();
 		std::vector<std::pair<size_t, size_t>> get_edges();

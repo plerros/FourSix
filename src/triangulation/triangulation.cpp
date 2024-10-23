@@ -6,45 +6,48 @@
 #include <CGAL/Polygon_mesh_processing/refine.h>
 
 #include "triangulation.hpp"
+#include <CGAL/draw_polygon_2.h> 
+#include <CGAL/centroid.h>
 
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
 
-size_t count_obtuse(CDT *cdt, data_t *data)
+static bool is_obtuse(K::Triangle_2 triangle)
+{
+	std::array <CGAL::Vector_2<K>, 3> edge;
+
+	for (size_t i = 0; i < 3; i++) {
+		size_t j = i + 1;
+		if (j == 3)
+			j = 0;
+		
+		edge[i] = CGAL::Vector_2<K>(triangle.vertex(i), triangle.vertex(j));
+	}
+
+	for (size_t i = 0; i < 3; i++) {
+		size_t j = i + 1;
+		if (j == 3)
+			j = 0;
+
+		switch (CGAL::angle(-edge[i], edge[j])) {
+			case CGAL::OBTUSE:
+				return true;
+			default:
+				break;
+		}
+	}
+	return false;
+}
+
+static size_t count_obtuse(CDT *cdt, data_t *data)
 {
 	size_t ret = 0;
 	for (auto it = cdt->finite_faces_begin(); it != cdt->finite_faces_end(); it++) {
-		auto triangle = cdt->triangle(it);
+		K::Triangle_2 triangle = cdt->triangle(it);
 		if (!(data->inside(CGAL::centroid(triangle))))
 			continue;
-		
-		std::array <CGAL::Vector_2<K>, 3> edge;
-
-		for (size_t i = 0; i < 3; i++) {
-			size_t j = i + 1;
-			if (j == 3)
-				j = 0;
-			
-			edge[i] = CGAL::Vector_2<K>(triangle.vertex(i), triangle.vertex(j));
-		}
-
-		std::array <int, 3> angle_type;
-
-		for (size_t i = 0; i < 3; i++) {
-			size_t j = i + 1;
-			if (j == 3)
-				j = 0;
-			
-			angle_type[i] = CGAL::angle(-edge[i], edge[j]);
-
-			switch (angle_type[i]) {
-				case CGAL::OBTUSE:
-					ret++;
-					break;
-				default:
-					break;
-			}
-		}
+		if (is_obtuse(triangle))
+			ret++;
 	}
 	return ret;
 }
@@ -80,13 +83,11 @@ CDT triangulation_t::get_cdt()
 
 void triangulation_t::steiner_centroid()
 {
-	std::vector<Point> steiner_pts;
+	std::vector<CDT::Point> steiner_pts;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		std::array <CGAL::Vector_2<K>, 3> edge;
-
-		Point steiner = CGAL::centroid(triangle);
+		CDT::Point steiner = CGAL::centroid(triangle);
 		if (!this->data->inside(steiner))
 			continue;
 		
@@ -105,13 +106,11 @@ void triangulation_t::steiner_centroid()
 
 void triangulation_t::steiner_circumcenter()
 {
-	std::vector<Point> steiner_pts;
+	std::vector<CDT::Point> steiner_pts;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		std::array <CGAL::Vector_2<K>, 3> edge;
-
-		Point steiner = CGAL::circumcenter(triangle);
+		CDT::Point steiner = CGAL::circumcenter(triangle);
 		if (!this->data->inside(steiner))
 			continue;
 		
@@ -136,9 +135,213 @@ void triangulation_t::steiner_circumcenter()
 	}
 }
 
+static bool is_in_triangle(K::Triangle_2 triangle, CDT::Point pt)
+{
+	for (size_t i = 0; i < 3; i++)
+		if (pt == triangle.vertex(i))
+			return true;
+	return false;
+}
+
+struct boundary_edge_t {
+	CDT::Point a;
+	CDT::Point b;
+	bool has_neighbor;
+	K::Triangle_2 neighbor;
+};
+
+void triangulation_t::steiner_polygon_centroid()
+{
+	std::vector<K::Triangle_2> visited;
+	std::vector<CDT::Point> steiner_pts;
+
+	std::vector<K::Triangle_2> obtuse_sequence;
+	while (1) {
+		obtuse_sequence.clear();
+		// Initialize first element
+		for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
+			K::Triangle_2 triangle = this->cdt.triangle(it);
+			if (std::find(visited.begin(), visited.end(), triangle) != visited.end())
+				continue;
+
+			if (!this->data->inside(CGAL::centroid(triangle)))
+				continue;
+
+			if (!is_obtuse(triangle))
+				continue;
+
+			std::vector<K::Triangle_2> obtuse_neighbors;
+			for (size_t i = 0; i < 3; i++) {
+				auto neighbor = it->neighbor(i);
+				if (this->cdt.is_infinite(neighbor))
+					continue;
+
+				K::Triangle_2 tmp = this->cdt.triangle(neighbor);
+				if(!is_obtuse(tmp))
+					continue;
+
+				if (!this->data->inside(CGAL::centroid(tmp)))
+					continue;
+
+				if (std::find(visited.begin(), visited.end(), tmp) != visited.end())
+					continue;
+
+				obtuse_neighbors.push_back(tmp);
+			}
+			if (obtuse_neighbors.size() == 1) {
+				obtuse_sequence.push_back(triangle);
+				visited.push_back(triangle);
+				break;
+			}
+		}
+		if (obtuse_sequence.size() == 0)
+			break;
+
+		// Continue the sequence:
+		bool exit_flag = false;
+		while (!exit_flag) {
+			std::vector<K::Triangle_2> visited_before = visited;
+			for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
+				assert(obtuse_sequence.size() > 0);
+				K::Triangle_2 triangle = this->cdt.triangle(it);
+				if (std::find(visited.begin(), visited.end(), triangle) != visited.end())
+					continue;
+
+				if (!this->data->inside(CGAL::centroid(triangle)))
+					continue;
+
+				if (!is_obtuse(triangle))
+					continue;
+
+				std::vector<K::Triangle_2> obtuse_neighbors;
+				bool connected = false;
+				for (size_t i = 0; i < 3; i++) {
+					auto neighbor = it->neighbor(i);
+					if (this->cdt.is_infinite(neighbor))
+						continue;
+
+					K::Triangle_2 tmp = this->cdt.triangle(neighbor);
+					if(!is_obtuse(tmp))
+						continue;
+
+					if (!this->data->inside(CGAL::centroid(tmp)))
+						continue;
+
+					if (tmp == obtuse_sequence.back())
+						connected = true;
+					obtuse_neighbors.push_back(tmp);
+				}
+				if (!connected)
+					continue;
+
+				assert(obtuse_neighbors.size() != 0);
+				if (obtuse_neighbors.size() == 1) {
+					obtuse_sequence.push_back(triangle);
+					visited.push_back(triangle);
+					exit_flag = true;
+					break;
+				}
+				if (obtuse_neighbors.size() == 2) {
+					obtuse_sequence.push_back(triangle);
+					visited.push_back(triangle);
+					break;
+				}
+				if (obtuse_neighbors.size() == 3){
+					obtuse_sequence.push_back(triangle);
+					visited.push_back(triangle);
+					exit_flag = true;
+					break;
+				}
+			}
+			assert(visited_before != visited);
+		}
+
+		assert(obtuse_sequence.size() > 1);
+		// Generate the boundary
+		std::vector<CDT::Point> pointsA;
+		std::vector<CDT::Point> pointsB;
+
+		K::Triangle_2 *prev = NULL;
+		K::Triangle_2 prev2;
+		while (obtuse_sequence.size() != 0) {
+			K::Triangle_2 triangle = obtuse_sequence.back();
+			obtuse_sequence.pop_back();
+			size_t i = 0;
+			size_t j = 1;
+			size_t k = 2;
+
+			assert(obtuse_sequence.size() != 0 || prev != NULL);
+			for (; i < 3; i++) {
+				j = i + 1;
+				if (j == 3)
+					j = 0;
+				k = j + 1;
+				if (k == 3)
+					k = 0;
+				if (
+					(obtuse_sequence.size() > 0)
+					&& is_in_triangle(obtuse_sequence.back(), triangle.vertex(i))
+					&& is_in_triangle(obtuse_sequence.back(), triangle.vertex(j))
+				)
+					break;
+				
+				if (
+					(obtuse_sequence.size() == 0)
+					&& is_in_triangle(*prev, triangle.vertex(i))
+					&& is_in_triangle(*prev, triangle.vertex(j))
+				)
+					break;
+			}
+			if (prev == NULL) {
+				prev = &prev2;
+				pointsA.push_back(triangle.vertex(k));
+				pointsA.push_back(triangle.vertex(i));
+				pointsB.push_back(triangle.vertex(j));
+			} else {
+				if (is_in_triangle(*prev, triangle.vertex(i)))
+					pointsB.push_back(triangle.vertex(k));
+				else
+					pointsA.push_back(triangle.vertex(k));
+
+				pointsA.push_back(triangle.vertex(i));
+				pointsB.push_back(triangle.vertex(j));
+			}
+			*prev = triangle;
+
+		}
+		std::reverse(pointsB.begin(), pointsB.end());
+		std::vector<CDT::Point> boundary;
+		boundary.reserve(pointsA.size() + pointsB.size());
+		boundary.insert(boundary.end(), pointsA.begin(), pointsA.end());
+		boundary.insert(boundary.end(), pointsB.begin(), pointsB.end());
+
+		/*
+		K traits = K();
+		CGAL::Polygon_2 pgn(traits);
+		for (auto it = boundary.begin(); it < boundary.end(); it++)
+			pgn.push_back(*it);
+		
+		CGAL::draw(pgn);
+		*/
+
+		CDT::Point steiner_pt = CGAL::centroid(boundary.begin(), boundary.end(), CGAL::Dimension_tag<0>());
+		steiner_pts.push_back(steiner_pt);
+	}
+	for (size_t i = 0; i < steiner_pts.size(); i++) {
+		struct triangulation_t current = *this;
+		current.cdt.insert(steiner_pts[i]);
+		current.obtuse = count_obtuse(&(current.cdt), this->data);
+		
+		if (this->obtuse > current.obtuse) {
+			std::cout << "polycent" << std::endl;
+			*this = current;
+		}
+	}	
+}
+
 void triangulation_t::steiner_projection()
 {
-	std::vector<Point> steiner_pts;
+	std::vector<CDT::Point> steiner_pts;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
@@ -168,7 +371,7 @@ void triangulation_t::steiner_projection()
 				case CGAL::OBTUSE: {
 					CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
 
-					Point steiner = l.projection(triangle.vertex(j));
+					CDT::Point steiner = l.projection(triangle.vertex(j));
 					
 					if (this->data->inside(steiner))
 						steiner_pts.push_back(steiner);
@@ -187,13 +390,13 @@ void triangulation_t::steiner_projection()
 
 void triangulation_t::steiner_random()
 {
-	std::vector<Point> random_pts;
+	std::vector<CDT::Point> random_pts;
 	{
 		CDT cdt2 = this->cdt;
 		Mesher mesher(cdt2);
 		mesher.set_criteria(Criteria(0, 0));
 		mesher.refine_mesh();
-		CGAL::Random_points_in_triangle_mesh_2<Point, CDT> generator(cdt2);
+		CGAL::Random_points_in_triangle_mesh_2<CDT::Point, CDT> generator(cdt2);
 		std::copy_n(generator, 100, std::back_inserter(random_pts));
 		assert(random_pts.size() == 100);
 
@@ -212,11 +415,11 @@ void triangulation_t::steiner_random()
 
 void triangulation_t::steiner_neighbor_random()
 {
-	std::vector<std::array<Point, 3>> triangles;
+	std::vector<std::array<CDT::Point, 3>> triangles;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		std::array<Point, 3> pts;
+		std::array<CDT::Point, 3> pts;
 		for (size_t i = 0; i < 3; i++)
 			pts[i] = triangle.vertex(i);
 	
@@ -254,11 +457,11 @@ void triangulation_t::steiner_neighbor_random()
 	}
 
 	for (size_t i = 0; i < triangles.size(); i++){
-		std::vector<Point> random_pts;
+		std::vector<CDT::Point> random_pts;
 		CDT cdt2;
-		std::array<Point, 3> triangle = triangles[i];
+		std::array<CDT::Point, 3> triangle = triangles[i];
 
-		CGAL::Random_points_in_triangle_2<Point> generator(triangle[0], triangle[1], triangle[2]);
+		CGAL::Random_points_in_triangle_2<CDT::Point> generator(triangle[0], triangle[1], triangle[2]);
 		std::copy_n(generator, 100, std::back_inserter(random_pts));
 
 
@@ -292,7 +495,7 @@ void triangulation_t::steiner_mixed(unsigned int retries)
 	}
 }
 
-enum steiner_method_enum {st_circumcenter, st_projection, st_centroid, st_random};
+enum steiner_method_enum {st_circumcenter, st_projection, st_polygon_centroid, st_centroid, st_random};
 
 void cout_space(size_t n)
 {
@@ -323,6 +526,12 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 				break;
 			case st_projection:
 				current.steiner_projection();
+				break;
+			case st_polygon_centroid:
+				if (this->progression_check == progression_less
+					&& (best.obtuse != this->obtuse))
+					break;
+				current.steiner_polygon_centroid();
 				break;
 			case st_centroid:
 				if (this->progression_check == progression_less
@@ -363,6 +572,12 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 	*this = best;
 }
 
+void triangulation_t::steiner_benchmark(unsigned int depth)
+{
+	for (unsigned int i = 0; i < depth; i++)
+		this->steiner_centroid();
+}
+
 std::vector<std::pair<std::string, std::string>> triangulation_t::get_steiner_str()
 {
 	std::vector<std::pair<std::string, std::string>> ret;
@@ -370,7 +585,7 @@ std::vector<std::pair<std::string, std::string>> triangulation_t::get_steiner_st
 	std::vector<std::pair<CDT::Point, CDT::Point>> input_edges = this->data->get_constraints();
 
 	for (auto it = this->cdt.finite_vertices_begin(); it != this->cdt.finite_vertices_end(); it++) {
-		Point pt = it->point();
+		CDT::Point pt = it->point();
 		if (std::find(input_points.begin(), input_points.end(), pt) != input_points.end())
 			continue;
 		
@@ -399,15 +614,15 @@ std::vector<std::pair<size_t, size_t>> triangulation_t::get_edges()
 	auto input_constraints = this->data->get_constraints();
 
 	for (auto it = this->cdt.finite_edges_begin(); it != this->cdt.finite_edges_end(); it++) {
-		Edge e = *it;
+		CDT::Edge e = *it;
 
 		auto v1 = e.first->vertex( (e.second+1)%3 );
 		auto v2 = e.first->vertex( (e.second+2)%3 );
 	
-		Point p1 = v1->point();
-		Point p2 = v2->point();
-		std::pair<Point, Point> points1 (p1, p2);
-		std::pair<Point, Point> points2 (p2, p1);
+		CDT::Point p1 = v1->point();
+		CDT::Point p2 = v2->point();
+		std::pair<CDT::Point, CDT::Point> points1 (p1, p2);
+		std::pair<CDT::Point, CDT::Point> points2 (p2, p1);
 
 		if (std::find(input_boundary.begin(), input_boundary.end(), points1) != input_boundary.end())
 			continue;
@@ -419,7 +634,7 @@ std::vector<std::pair<size_t, size_t>> triangulation_t::get_edges()
 		if (std::find(input_constraints.begin(), input_constraints.end(), points2) != input_constraints.end())
 			continue;
 
-		Point center = CGAL::midpoint(p1, p2);
+		CDT::Point center = CGAL::midpoint(p1, p2);
 		if (!this->data->inside(center))
 			continue;
 		

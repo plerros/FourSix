@@ -18,7 +18,7 @@ data_t::data_t(data_in d)
 		K::FT x(CGAL::Exact_integer(point.first));
 		K::FT y(CGAL::Exact_integer(point.second));
 
-		this->points.push_back(Point(x, y));
+		this->points.push_back(CDT::Point(x, y));
 	}
 
 	auto const boundary = d.get_boundary();
