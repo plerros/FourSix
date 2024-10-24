@@ -98,7 +98,12 @@ void triangulation_t::steiner_centroid()
 		current.cdt.insert(steiner_pts[i]);
 		current.obtuse = count_obtuse(&(current.cdt), this->data);
 		
-		if (this->obtuse > current.obtuse)
+		if (this->progression_check == progression_less
+			&& current.obtuse < this->obtuse)
+			*this = current;
+
+		if (this->progression_check == progression_less_equal
+			&& current.obtuse <= this->obtuse)
 			*this = current;
 	}
 }
@@ -245,10 +250,19 @@ void triangulation_t::steiner_polygon_centroid()
 		current.cdt.insert(steiner_pts[i]);
 		current.obtuse = count_obtuse(&(current.cdt), this->data);
 		
-		if (this->obtuse > current.obtuse) {
+
+		if (this->progression_check == progression_less
+			&& current.obtuse < this->obtuse) {
 			std::cout << "polycent" << std::endl;
 			*this = current;
 		}
+
+		if (this->progression_check == progression_less_equal
+			&& current.obtuse <= this->obtuse){
+			std::cout << "polycent" << std::endl;
+			*this = current;
+		}
+
 	}	
 }
 
@@ -328,10 +342,15 @@ void triangulation_t::steiner_random()
 
 void triangulation_t::steiner_neighbor_random()
 {
-	std::vector<std::array<CDT::Point, 3>> triangles;
+	std::vector<K::Triangle_2> triangles;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
+
+		size_t area = std::round(CGAL::to_double(triangle.area()));
+		if (area < 100)
+			continue;
+
 		std::array<CDT::Point, 3> pts;
 		for (size_t i = 0; i < 3; i++)
 			pts[i] = triangle.vertex(i);
@@ -362,21 +381,24 @@ void triangulation_t::steiner_neighbor_random()
 				continue;
 
 			auto triangle = this->cdt.triangle(neighbor);
-
-			for (size_t i = 0; i < 3; i++)
-				pts[i] = triangle.vertex(i);
-			triangles.push_back(pts);
+			triangles.push_back(triangle);
 		}
 	}
 
 	for (size_t i = 0; i < triangles.size(); i++){
 		std::vector<CDT::Point> random_pts;
 		CDT cdt2;
-		std::array<CDT::Point, 3> triangle = triangles[i];
+		K::Triangle_2 triangle = triangles[i];
 
-		CGAL::Random_points_in_triangle_2<CDT::Point> generator(triangle[0], triangle[1], triangle[2]);
-		std::copy_n(generator, 100, std::back_inserter(random_pts));
+		K::FT area_exact = triangle.area();
 
+		size_t area = std::round(CGAL::to_double(area_exact));
+		size_t amount = 100;
+		if (area / 10 < amount)
+			amount = area / 10;
+
+		CGAL::Random_points_in_triangle_2<CDT::Point> generator(triangle.vertex(0), triangle.vertex(1), triangle.vertex(2));
+		std::copy_n(generator, amount, std::back_inserter(random_pts));
 
 		for (size_t i = 0; i < random_pts.size(); i++) {
 			struct triangulation_t current = *this;
