@@ -442,6 +442,8 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 {
 	if (PRINT_RECURSION_TREE) {
 		cout_space(depth);
+		if (this->progression_check == progression_less_equal)
+			std::cout << ".";
 		std::cout << depth << std::endl;
 	}
 	if (depth == 0)
@@ -492,8 +494,11 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 		if (best.obtuse == 0)
 			break;
 
-		if (current.obtuse != this->obtuse) {
-			current.steiner_mixed_recursive(depth - 1);
+		if (current.cdt != this->cdt) {
+			if (current.obtuse < this->obtuse)
+				current.steiner_mixed_recursive(depth - 1);
+			if (current.obtuse == this->obtuse)
+				current.steiner_mixed_recursive(depth);
 			if (this->progression_check == progression_less
 				&& (current.obtuse < best.obtuse))
 				best = current;
