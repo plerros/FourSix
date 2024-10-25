@@ -8,41 +8,7 @@
 #include <CGAL/Polygon_mesh_processing/refine.h>
 
 #include "obtuse_polygon.hpp"
-
-static bool is_in_triangle(K::Triangle_2 triangle, CDT::Point pt)
-{
-	for (size_t i = 0; i < 3; i++)
-		if (pt == triangle.vertex(i))
-			return true;
-	return false;
-}
-
-static bool is_obtuse(K::Triangle_2 triangle)
-{
-	std::array <CGAL::Vector_2<K>, 3> edge;
-
-	for (size_t i = 0; i < 3; i++) {
-		size_t j = i + 1;
-		if (j == 3)
-			j = 0;
-		
-		edge[i] = CGAL::Vector_2<K>(triangle.vertex(i), triangle.vertex(j));
-	}
-
-	for (size_t i = 0; i < 3; i++) {
-		size_t j = i + 1;
-		if (j == 3)
-			j = 0;
-
-		switch (CGAL::angle(-edge[i], edge[j])) {
-			case CGAL::OBTUSE:
-				return true;
-			default:
-				break;
-		}
-	}
-	return false;
-}
+#include "helper.hpp"
 
 obtuse_polygon_t::obtuse_polygon_t(data_t *data)
 {
@@ -223,12 +189,10 @@ bool obtuse_polygon_t::internal(CDT::Point pt)
 
 bool obtuse_polygon_t::has_constraint()
 {
-	std::vector<std::pair<CDT::Point, CDT::Point>> constraints = this->data->get_constraints();
+	std::vector<CDT::Point> constraint_mid_pts = this->data->get_constraint_mid_pts();
 
-	for (auto it = constraints.begin(); it < constraints.end(); it++) {
-		if (this->internal(it->first))
-			return true;
-		if (this->internal(it->second))
+	for (auto it = constraint_mid_pts.begin(); it < constraint_mid_pts.end(); it++) {
+		if (this->internal(*it))
 			return true;
 	}
 	return false;

@@ -7,36 +7,10 @@
 
 #include "triangulation.hpp"
 #include "obtuse_polygon.hpp"
+#include "helper.hpp"
 
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
-
-static bool is_obtuse(K::Triangle_2 triangle)
-{
-	std::array <CGAL::Vector_2<K>, 3> edge;
-
-	for (size_t i = 0; i < 3; i++) {
-		size_t j = i + 1;
-		if (j == 3)
-			j = 0;
-		
-		edge[i] = CGAL::Vector_2<K>(triangle.vertex(i), triangle.vertex(j));
-	}
-
-	for (size_t i = 0; i < 3; i++) {
-		size_t j = i + 1;
-		if (j == 3)
-			j = 0;
-
-		switch (CGAL::angle(-edge[i], edge[j])) {
-			case CGAL::OBTUSE:
-				return true;
-			default:
-				break;
-		}
-	}
-	return false;
-}
 
 static size_t count_obtuse(CDT *cdt, data_t *data)
 {
@@ -139,14 +113,6 @@ void triangulation_t::steiner_circumcenter()
 	}
 }
 
-static bool is_in_triangle(K::Triangle_2 triangle, CDT::Point pt)
-{
-	for (size_t i = 0; i < 3; i++)
-		if (pt == triangle.vertex(i))
-			return true;
-	return false;
-}
-
 struct boundary_edge_t {
 	CDT::Point a;
 	CDT::Point b;
@@ -237,7 +203,6 @@ void triangulation_t::steiner_polygon_centroid()
 					exit_flag = true;
 				}
 			}
-			//assert(visited_before != visited);
 			if (visited_before == visited)
 				break;
 		}

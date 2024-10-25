@@ -12,6 +12,7 @@ class data_t
 		std::vector<CDT::Point> boundary_pts;
 		std::vector<std::pair<CDT::Point, CDT::Point>> boundary;
 		std::vector<std::pair<CDT::Point, CDT::Point>> constraints;
+		std::vector<CDT::Point> constraint_mid_pts;
 
 	public:
 		data_t(data_in d);
@@ -20,6 +21,7 @@ class data_t
 		std::vector<CDT::Point> get_points();
 		std::vector<std::pair<CDT::Point, CDT::Point>> get_boundary();
 		std::vector<std::pair<CDT::Point, CDT::Point>> get_constraints();
+		std::vector<CDT::Point> get_constraint_mid_pts();
 		bool inside(CDT::Point pt);
 
 		void final_triangulation();

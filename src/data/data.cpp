@@ -75,6 +75,10 @@ data_t::data_t(data_in d)
 		this->constraints.erase(it);
 		it = this->constraints.begin();
 	}
+
+	// Create constraint midpoints
+	for (auto it = this->constraints.begin(); it < this->constraints.end(); it++)
+		this->constraint_mid_pts.push_back(CGAL::midpoint(it->first, it->second));
 }
 
 void data_t::print()
@@ -99,6 +103,11 @@ std::vector<std::pair<CDT::Point, CDT::Point>> data_t::get_boundary()
 std::vector<std::pair<CDT::Point, CDT::Point>> data_t::get_constraints()
 {
 	return this->constraints;
+}
+
+std::vector<CDT::Point> data_t::get_constraint_mid_pts()
+{
+	return this->constraint_mid_pts;
 }
 
 bool data_t::inside(CDT::Point pt)
