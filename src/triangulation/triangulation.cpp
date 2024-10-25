@@ -1,5 +1,6 @@
 #include "configuration.hpp"
 
+#include <CGAL/intersections.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Quotient.h>
@@ -37,6 +38,9 @@ triangulation_t::triangulation_t(data_t *data)
 	this->data = data;
 	this->obtuse = count_obtuse(&(this->cdt), this->data);
 	this->progression_check = progression_less;
+
+	for (size_t i = 0; i < st_end; i++)
+		this->method_performance[i] = -1;
 }
 
 void triangulation_t::set_progression_check(int check)
@@ -305,6 +309,40 @@ void triangulation_t::steiner_random()
 	}
 }
 
+void triangulation_t::steiner_constraint_random()
+{
+	if (this->method_performance[st_constraint_random] == 0)
+		return;
+
+	this->method_performance[st_constraint_random] = 0;
+
+	std::vector<CDT::Point> random_pts;
+	std::vector<std::pair<CDT::Point, CDT::Point>> constraints = this->data->get_constraints();
+
+	for (auto it = constraints.begin(); it < constraints.end(); it++) {
+		CGAL::Random_points_on_segment_2<CDT::Point> generator(it->first, it->second);
+
+		K::Segment_2 seg(it->first, it->second);
+		double squared_length = CGAL::to_double(seg.squared_length());
+		size_t length = std::round(std::sqrt(squared_length));
+		size_t amount = length / 10;
+
+		//std::cout << amount << std::endl;
+		std::copy_n(generator, 100, std::back_inserter(random_pts));
+	}
+
+	for (size_t i = 0; i < random_pts.size(); i++) {
+		struct triangulation_t current = *this;
+		current.cdt.insert(random_pts[i]);
+		current.obtuse = count_obtuse(&(current.cdt), this->data);
+		if (current.obtuse < this->obtuse) {
+			std::cout << "segrand" << std::endl;
+			*this = current;
+			this->method_performance[st_constraint_random]++;
+		}
+	}
+}
+
 void triangulation_t::steiner_neighbor_random()
 {
 	std::vector<K::Triangle_2> triangles;
@@ -350,10 +388,29 @@ void triangulation_t::steiner_neighbor_random()
 		}
 	}
 
+	std::vector<std::pair<CDT::Point, CDT::Point>> constraints = this->data->get_constraints();
+
+	std::vector<K::Segment_2> constraint_segments;
+
+	for (auto it = constraints.begin(); it < constraints.end(); it++)
+		constraint_segments.push_back(K::Segment_2(it->first, it->second));
+
 	for (size_t i = 0; i < triangles.size(); i++){
 		std::vector<CDT::Point> random_pts;
 		CDT cdt2;
 		K::Triangle_2 triangle = triangles[i];
+
+		bool touch_constraint = false;
+		for (auto it = constraint_segments.begin(); it < constraint_segments.end(); it++) {
+			const auto result = CGAL::intersection(*it, triangle);
+			if (result) {
+				touch_constraint = true;
+				break;
+			}
+		}
+		if (touch_constraint) {
+			continue;
+		}
 
 		K::FT area_exact = triangle.area();
 
@@ -370,7 +427,7 @@ void triangulation_t::steiner_neighbor_random()
 			current.cdt.insert(random_pts[i]);
 			current.obtuse = count_obtuse(&(current.cdt), this->data);
 			if (current.obtuse < this->obtuse) {
-				std::cout << "randpoint" << std::endl;
+				std::cout << "polyrand" << std::endl;
 				*this = current;
 			}
 		}
@@ -395,8 +452,6 @@ void triangulation_t::steiner_mixed(unsigned int retries)
 	}
 }
 
-enum steiner_method_enum {st_circumcenter, st_projection, st_polygon_centroid, st_centroid, st_random};
-
 void cout_space(size_t n)
 {
 	for (unsigned int i = 0; i < n; i++)
@@ -419,8 +474,7 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 	struct triangulation_t best = *this;
 	struct triangulation_t current = *this;
 
-
-	for (int method = st_circumcenter; method <= st_random; method ++) {
+	for (int method = st_circumcenter; method < st_end; method ++) {
 		current = *this;
 		switch(method) {
 			case st_circumcenter:
@@ -441,7 +495,13 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 					break;
 				current.steiner_centroid();
 				break;
-			case st_random:
+			case st_constraint_random:
+				if (this->progression_check == progression_less
+					&& (best.obtuse != this->obtuse))
+					break;
+				current.steiner_constraint_random();
+				break;
+			case st_neighbor_random:
 				if (this->progression_check == progression_less
 					&& (best.obtuse != this->obtuse))
 					break;

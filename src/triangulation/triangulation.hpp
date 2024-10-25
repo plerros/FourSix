@@ -4,6 +4,7 @@
 #include "data.hpp"
 
 enum progression_check_enum{progression_less, progression_less_equal};
+enum steiner_method_enum {st_circumcenter, st_projection, st_polygon_centroid, st_centroid, st_constraint_random, st_neighbor_random, st_end};
 
 class triangulation_t
 {
@@ -12,6 +13,7 @@ class triangulation_t
 		size_t obtuse;
 		data_t *data;
 		int progression_check;
+		int method_performance[st_end];
 
 	public:
 		triangulation_t(data_t *data);
@@ -26,6 +28,7 @@ class triangulation_t
 		void steiner_polygon_centroid();
 		void steiner_projection();
 		void steiner_random();
+		void steiner_constraint_random();
 		void steiner_neighbor_random();
 		void steiner_mixed(unsigned int retries);
 		void steiner_mixed_recursive(unsigned int depth);
