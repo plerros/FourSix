@@ -30,7 +30,7 @@ int main(int argc, char** argv) {
 
 		data_t data{input};
 		struct triangulation_t triangulation(&data);
-		std::cout << "Input Obtuse: " << triangulation.get_obtuse() << std::endl;
+		std::cout << "Input Obtuse: " << triangulation.size_obtuse() << std::endl;
 
 		//CGAL::make_conforming_Delaunay_2(cdt);
 		//CGAL::make_conforming_Gabriel_2(cdt);
@@ -38,10 +38,9 @@ int main(int argc, char** argv) {
 		// Runtime start
 		auto t1 = std::chrono::high_resolution_clock::now();
 
-
 		//steiner_mixed(&triangulation, &data, 5);
-		unsigned int depth = triangulation.get_obtuse() / 3;
-		if (triangulation.get_obtuse() > 0 && depth < 5)
+		unsigned int depth = triangulation.size_obtuse() / 3;
+		if (triangulation.size_obtuse() > 0 && depth < 5)
 			depth = 5;
 
 		triangulation.steiner_mixed_recursive(depth);
@@ -56,8 +55,8 @@ int main(int argc, char** argv) {
 		std::cout << ms_int.count() << "ms" << std::endl;
 		std::cout << ms_double.count() << "ms" << std::endl;
 
-
-		std::cout << "obtuse " << triangulation.get_obtuse() << std::endl;
+		std::cout << "obtuse " << triangulation.size_obtuse() << std::endl;
+		std::cout << "steiner " << triangulation.size_steiner() << std::endl;
 
 		data_out output(&data, &triangulation);
 
