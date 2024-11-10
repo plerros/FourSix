@@ -308,12 +308,7 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 		}
 	}
 
-	std::vector<std::pair<CDT::Point, CDT::Point>> constraints = this->data->get_constraints();
-
-	std::vector<K::Segment_2> constraint_segments;
-
-	for (auto it = constraints.begin(); it < constraints.end(); it++)
-		constraint_segments.push_back(K::Segment_2(it->first, it->second));
+	std::vector<K::Segment_2> constraint_segments = this->data->get_constraint_segments();
 
 	for (size_t i = 0; i < triangles.size(); i++){
 		std::vector<CDT::Point> random_pts;

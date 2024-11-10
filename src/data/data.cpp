@@ -33,6 +33,7 @@ data_t::data_t(data_in d)
 
 		this->boundary.push_back(edge);
 		this->boundary_pts.push_back(edge.first);
+		this->boundary_segments.push_back(K::Segment_2(edge.first, edge.second));
 	}
 
 	for (const auto& edge_id : d.get_constraints()) {
@@ -45,6 +46,7 @@ data_t::data_t(data_in d)
 		edge.second = this->points[point1_id];
 		
 		this->constraints.push_back(edge);
+		this->constraint_segments.push_back(K::Segment_2(edge.first, edge.second));
 	}
 
 	// Remove points outside boundary
@@ -100,9 +102,19 @@ std::vector<std::pair<CDT::Point, CDT::Point>> data_t::get_boundary()
 	return this->boundary;
 }
 
+std::vector<K::Segment_2> data_t::get_boundary_segments()
+{
+	return this->boundary_segments;
+}
+
 std::vector<std::pair<CDT::Point, CDT::Point>> data_t::get_constraints()
 {
 	return this->constraints;
+}
+
+std::vector<K::Segment_2> data_t::get_constraint_segments()
+{
+	return this->constraint_segments;
 }
 
 std::vector<CDT::Point> data_t::get_constraint_mid_pts()

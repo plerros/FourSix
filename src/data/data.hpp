@@ -11,7 +11,9 @@ class data_t
 		std::vector<CDT::Point> points;
 		std::vector<CDT::Point> boundary_pts;
 		std::vector<std::pair<CDT::Point, CDT::Point>> boundary;
+		std::vector<K::Segment_2> boundary_segments;
 		std::vector<std::pair<CDT::Point, CDT::Point>> constraints;
+		std::vector<K::Segment_2> constraint_segments;
 		std::vector<CDT::Point> constraint_mid_pts;
 
 	public:
@@ -20,7 +22,9 @@ class data_t
 		std::string get_instance_uid();
 		std::vector<CDT::Point> get_points();
 		std::vector<std::pair<CDT::Point, CDT::Point>> get_boundary();
+		std::vector<K::Segment_2> get_boundary_segments();
 		std::vector<std::pair<CDT::Point, CDT::Point>> get_constraints();
+		std::vector<K::Segment_2> get_constraint_segments();
 		std::vector<CDT::Point> get_constraint_mid_pts();
 		bool inside(CDT::Point pt);
 
