@@ -1,6 +1,10 @@
+#include <iterator>
+#include <random>
+
 #include "configuration.hpp"
 
 #include <CGAL/intersections.h>
+#include <CGAL/squared_distance_2.h>
 #include <CGAL/Delaunay_mesh_size_criteria_2.h>
 #include <CGAL/Delaunay_mesher_2.h>
 #include <CGAL/Quotient.h>
@@ -85,6 +89,14 @@ triangulation_t::triangulation_t(data_t *data)
 
 	for (size_t i = 0; i < st_end; i++)
 		this->method_performance[i] = -1;
+}
+
+void triangulation_t::insert(CDT::Point steiner, int method)
+{
+	this->cdt.insert(steiner);
+	this->steiner++;
+	this->obtuse = count_obtuse(&(this->cdt), this->data);
+	this->history.push_back(method);
 }
 
 void triangulation_t::set_progression_check(int check)
@@ -223,8 +235,10 @@ void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_
 	}
 }
 
-void triangulation_t::steiner_projection(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_projection_internal(std::vector<CDT::Point> *inward, std::vector<CDT::Point> *outward)
 {
+	std::vector<K::Segment_2> boundary_segments = this->data->get_boundary_segments();
+
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
 		std::array <CGAL::Vector_2<K>, 3> edge;
@@ -249,31 +263,116 @@ void triangulation_t::steiner_projection(std::vector<CDT::Point> *steiner_pts)
 			
 			angle_type[i] = CGAL::angle(-edge[i], edge[j]);
 
-			switch (angle_type[i]) {
-				case CGAL::OBTUSE: {
-					CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
+			if (angle_type[i] != CGAL::OBTUSE)
+				continue;
 
-					CDT::Point steiner = l.projection(triangle.vertex(j));
-					
-					if (this->data->inside(steiner))
-						steiner_pts->push_back(steiner);
-					break;
+			CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
+			CDT::Point steiner = l.projection(triangle.vertex(j));
+			
+			if (!this->data->inside(steiner))
+				continue;
+
+			// Sort to inward / outward
+			K::Segment_2 closest_segment1 = boundary_segments[0];
+			auto distance1 = CGAL::squared_distance(triangle.vertex(i), closest_segment1);
+
+			for (auto it = boundary_segments.begin(); it < boundary_segments.end(); it++) {
+				auto tmp = CGAL::squared_distance(triangle.vertex(i), *it);
+				if (tmp < distance1) {
+					closest_segment1 = *it;
+					distance1 = tmp;
 				}
-				default:
-					break;
 			}
+			
+			K::Segment_2 closest_segment2 = boundary_segments[0];
+			auto distance2 = CGAL::squared_distance(steiner, closest_segment2);
+			for (auto it = boundary_segments.begin(); it < boundary_segments.end(); it++) {
+				auto tmp = CGAL::squared_distance(steiner, *it);
+				if (tmp < distance2) {
+					closest_segment2 = *it;
+					distance2 = tmp;
+				}
+			}
+
+			if (
+				distance1 < distance2
+				&& distance1 != 0
+			) {
+				if (inward != NULL)
+					inward->push_back(steiner);
+			} else {
+				if (outward != NULL)
+					outward->push_back(steiner);
+			}
+			break;
 		}
 	}
 }
 
-void triangulation_t::steiner_random(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_projection_inward(std::vector<CDT::Point> *steiner_pts)
 {
-	CDT cdt2 = this->cdt;
-	Mesher mesher(cdt2);
-	mesher.set_criteria(Criteria(0, 0));
-	mesher.refine_mesh();
-	CGAL::Random_points_in_triangle_mesh_2<CDT::Point, CDT> generator(cdt2);
-	std::copy_n(generator, 100, std::back_inserter(*steiner_pts));
+	std::vector<CDT::Point> local;
+
+	steiner_projection_internal(&local, NULL);
+
+	if (steiner_pts != NULL) {
+		steiner_pts->insert(steiner_pts->end(), local.begin(), local.end());
+		local.clear();
+	}
+	
+	for (size_t i = 0; i < local.size(); i++) {
+		this->insert(local[i], st_unused);
+		if (this->obtuse == 0)
+			return;
+	}
+}
+
+void triangulation_t::steiner_projection_outward(std::vector<CDT::Point> *steiner_pts)
+{
+	std::vector<CDT::Point> local;
+
+	steiner_projection_internal(NULL, &local);
+	
+	if (steiner_pts != NULL) {
+		steiner_pts->insert(steiner_pts->end(), local.begin(), local.end());
+		local.clear();
+	}
+
+	for (size_t i = 0; i < local.size(); i++) {
+		this->insert(local[i], st_projection);
+		print_st_method(st_projection);
+		if (this->obtuse == 0)
+			return;
+	}
+}
+
+void triangulation_t::steiner_projection(std::vector<CDT::Point> *steiner_pts)
+{
+	std::vector<CDT::Point> local1;
+	std::vector<CDT::Point> local2;
+
+	steiner_projection_internal(&local1, &local2);
+
+	if (steiner_pts != NULL) {
+		steiner_pts->insert(steiner_pts->end(), local1.begin(), local1.end());
+		steiner_pts->insert(steiner_pts->end(), local2.begin(), local2.end());
+		local1.clear();
+		local2.clear();
+	}
+
+	for (size_t i = 0; i < local1.size(); i++) {
+		this->insert(local1[i], st_projection_all);
+		print_st_method(st_projection_all);
+		if (this->obtuse == 0)
+			return;
+	}
+
+	for (size_t i = 0; i < local2.size(); i++) {
+		this->insert(local2[i], st_projection_all);
+		print_st_method(st_projection_all);
+		if (this->obtuse == 0)
+			return;
+	}
 }
 
 void triangulation_t::steiner_constraint_random(std::vector<CDT::Point> *steiner_pts)
@@ -378,45 +477,40 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 
 void triangulation_t::steiner_add(const int method)
 {
+	std::random_device rd;
+	std::mt19937 g(rd());
 	std::vector<CDT::Point> steiner_pts;
 	switch (method){
 		case st_centroid:
-			this->steiner_centroid(& steiner_pts);
+			this->steiner_centroid(&steiner_pts);
 			break;
 		case st_circumcenter:
-			this->steiner_circumcenter(& steiner_pts);
+			this->steiner_circumcenter(&steiner_pts);
 			break;
 		case st_constraint_random:
-			this->steiner_constraint_random(& steiner_pts);
+			this->steiner_constraint_random(&steiner_pts);
 			break;
 		case st_neighbor_random:
-			this->steiner_neighbor_random(& steiner_pts);
+			this->steiner_neighbor_random(&steiner_pts);
 			break;
 		case st_polygon_centroid:
-			this->steiner_polygon_centroid(& steiner_pts);
+			this->steiner_polygon_centroid(&steiner_pts);
 			break;
 		case st_projection:
-			this->steiner_projection(& steiner_pts);
+			this->steiner_projection_outward(NULL);
+			break;
+		case st_projection_all:
+			this->steiner_projection(NULL);
 			break;
 		default:
 			// maybe error?
 			break;
 	}
+	//std::shuffle(steiner_pts.begin(), steiner_pts.end(), g);
+
 	for (size_t i = 0; i < steiner_pts.size(); i++) {
 		struct triangulation_t current = *this;
-		current.cdt.insert(steiner_pts[i]);
-		current.steiner++;
-		current.obtuse = count_obtuse(&(current.cdt), this->data);
-
-		if (method == st_projection) {
-			*this=current;
-			this->method_performance[method]++;
-
-			if (this->obtuse == 0)
-				return;
-			continue;
-		}
-	
+		current.insert(steiner_pts[i], method);
 
 		if (this->progression_check == progression_less
 			&& current.obtuse < this->obtuse) {
@@ -467,6 +561,8 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 		return;
 
 	if (PRINT_RECURSION_TREE) {
+		std::cout << this->obtuse << " \t| ";
+		std::cout << this->steiner << " \t|";
 		cout_space(depth);
 		if (this->progression_check == progression_less_equal)
 			std::cout << ".";
@@ -477,39 +573,33 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 	struct triangulation_t current = *this;
 
 	for (int method = st_start + 1; method < st_end; method++) {
+		//if (this->history.size() > 0 && this->history.back() == method)
+		//	continue;
+
 		current = *this;
+
+		bool skip_flag = false;
+
 		switch(method) {
-			case st_circumcenter:
-				current.steiner_add(method);
-				break;
-			case st_projection:
-				current.steiner_add(method);
-				break;
+			// allow statements to fall through
 			case st_polygon_centroid:
-				if (this->progression_check == progression_less
-					&& (best.obtuse != this->obtuse))
-					break;
-				current.steiner_add(method);
-				break;
 			case st_centroid:
-				if (this->progression_check == progression_less
-					&& (best.obtuse != this->obtuse))
-					break;
-				current.steiner_add(method);
-				break;
 			case st_constraint_random:
-				if (this->progression_check == progression_less
-					&& (best.obtuse != this->obtuse))
-					break;
-				current.steiner_add(method);
-				break;
 			case st_neighbor_random:
 				if (this->progression_check == progression_less
 					&& (best.obtuse != this->obtuse))
-					break;
-				current.steiner_add(method);
+					skip_flag = true;
+				break;
+			case st_projection_all:
+				// prevent projection_all from running after projection.
+				if (this->history.size() > 0  && this->history.back() == st_projection)
+					skip_flag = true;
+				break;
+			default:
 				break;
 		}
+		if (!skip_flag)
+			current.steiner_add(method);
 
 		if (this->progression_check == progression_less
 			&& (current.obtuse < best.obtuse))

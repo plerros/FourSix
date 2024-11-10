@@ -28,9 +28,13 @@ class triangulation_t
 		size_t steiner;
 		data_t *data;
 		int progression_check;
+		std::vector<int> history;
 		int method_performance[st_end];
 
+		void insert(CDT::Point steiner, int method);
 		bool exit_early();
+		void steiner_projection_internal(std::vector<CDT::Point> *inward, std::vector<CDT::Point> *outward);
+
 	public:
 		triangulation_t(data_t *data);
 		void set_progression_check(int check);
@@ -47,6 +51,8 @@ class triangulation_t
 		void steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts);
 
 		void steiner_projection(std::vector<CDT::Point> *steiner_pts);
+		void steiner_projection_inward(std::vector<CDT::Point> *steiner_pts);
+		void steiner_projection_outward(std::vector<CDT::Point> *steiner_pts);
 
 		void steiner_random(std::vector<CDT::Point> *steiner_pts);
 		void steiner_constraint_random(std::vector<CDT::Point> *steiner_pts);
