@@ -34,34 +34,20 @@ static size_t count_obtuse(CDT *cdt, data_t *data)
 
 static void print_st_method(int method)
 {
-	//return;
-	auto str = "";
-	switch (method) {
-		case st_centroid:
-			str = "centroid";
-			break;
-		case st_circumcenter:
-			str = "circumcenter";
-			break;
-		case st_polygon_centroid:
-			str = "poly";
-			break;
-		case st_projection:
-			str = "projection";
-			break;
-		case st_projection_all:
-			str = "projection_all";
-			break;
-		case st_neighbor_random:
-			str = "neighbor";
-			break;
-		case st_constraint_random:
-			str = "constraint";
-			break;
-		default:
-			return;
-	}
-	std::cout << str << std::endl;
+	#if PRINT_METHODS
+	std::string name[st_end];
+	std::fill_n(name, st_end, "");
+	name[st_centroid] = "centroid";
+	name[st_circumcenter] = "circumcenter";
+	name[st_polygon_centroid] = "polygon";
+	name[st_projection] = "projection";
+	name[st_projection_all] = "projection_all";
+	name[st_neighbor_random] = "neighbor";
+	name[st_constraint_random] = "constraint";
+
+	if (method < st_end)
+		std::cout << name[method] << std::endl;
+	#endif
 }
 
 static void cout_space(size_t n)
