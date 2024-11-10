@@ -1,5 +1,16 @@
 cmake_minimum_required(VERSION 2.8.10)
 
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif ()
+
+set(CMAKE_C_FLAGS_RELEASE "-O2" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+set(CMAKE_CXX_FLAGS_RELEASE "-O2" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+set(CMAKE_C_FLAGS_MINSIZEREL "-Os" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used by the compiler during release builds." FORCE)
+
 project(FourSix)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)
