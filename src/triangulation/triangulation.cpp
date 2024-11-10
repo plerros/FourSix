@@ -13,6 +13,8 @@
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
 
+// Helper functions
+
 static size_t count_obtuse(CDT *cdt, data_t *data)
 {
 	size_t ret = 0;
@@ -25,6 +27,46 @@ static size_t count_obtuse(CDT *cdt, data_t *data)
 	}
 	return ret;
 }
+
+static void print_st_method(int method)
+{
+	//return;
+	auto str = "";
+	switch (method) {
+		case st_centroid:
+			str = "centroid";
+			break;
+		case st_circumcenter:
+			str = "circumcenter";
+			break;
+		case st_polygon_centroid:
+			str = "poly";
+			break;
+		case st_projection:
+			str = "projection";
+			break;
+		case st_projection_all:
+			str = "projection_all";
+			break;
+		case st_neighbor_random:
+			str = "neighbor";
+			break;
+		case st_constraint_random:
+			str = "constraint";
+			break;
+		default:
+			return;
+	}
+	std::cout << str << std::endl;
+}
+
+static void cout_space(size_t n)
+{
+	for (unsigned int i = 0; i < n; i++)
+		std::cout << " ";
+}
+
+// Class functions
 
 triangulation_t::triangulation_t(data_t *data)
 {
@@ -65,6 +107,8 @@ CDT triangulation_t::get_cdt()
 	return this->cdt;
 }
 
+// Steiner methods
+
 void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 {
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
@@ -88,13 +132,6 @@ void triangulation_t::steiner_circumcenter(std::vector<CDT::Point> *steiner_pts)
 		steiner_pts->push_back(steiner);
 	}
 }
-
-struct boundary_edge_t {
-	CDT::Point a;
-	CDT::Point b;
-	bool has_neighbor;
-	K::Triangle_2 neighbor;
-};
 
 void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts)
 {
@@ -339,35 +376,6 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 	}
 }
 
-void inline print_st_method(int method)
-{
-	return;
-	auto str = "";
-	switch (method) {
-		case st_centroid:
-			str = "centroid";
-			break;
-		case st_circumcenter:
-			str = "circumcenter";
-			break;
-		case st_polygon_centroid:
-			str = "poly";
-			break;
-		case st_projection:
-			str = "projection";
-			break;
-		case st_neighbor_random:
-			str = "neighbor";
-			break;
-		case st_constraint_random:
-			str = "constraint";
-			break;
-		default:
-			return;
-	}
-	std::cout << str << std::endl;
-}
-
 void triangulation_t::steiner_add(const int method)
 {
 	std::vector<CDT::Point> steiner_pts;
@@ -438,32 +446,6 @@ void triangulation_t::steiner_add(const int method)
 	}
 }
 
-void triangulation_t::steiner_mixed(unsigned int retries)
-{
-/*
-	struct triangulation_t original = *this;
-	for (unsigned int i = 0; i < retries; i++) {
-		struct triangulation_t current = original;
-		current.steiner_random();
-		for (int j = 0; j < 20; j++) {
-			struct triangulation_t current2 = current;
-			current2.steiner_circumcenter();
-			current2.steiner_projection();
-			if (current.obtuse > current2.obtuse)
-				current = current2;
-		}
-		if (this->obtuse > current.obtuse)
-			*this = current;
-	}
-*/
-}
-
-inline void cout_space(size_t n)
-{
-	for (unsigned int i = 0; i < n; i++)
-		std::cout << " ";
-}
-
 void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 {
 	if (PRINT_RECURSION_TREE) {
@@ -486,7 +468,7 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 	struct triangulation_t best = *this;
 	struct triangulation_t current = *this;
 
-	for (int method = st_start + 1; method < st_end; method ++) {
+	for (int method = st_start + 1; method < st_end; method++) {
 		current = *this;
 		switch(method) {
 			case st_circumcenter:
@@ -559,12 +541,6 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 		}
 	}
 	*this = best;
-}
-
-void triangulation_t::steiner_benchmark(unsigned int depth)
-{
-	for (unsigned int i = 0; i < depth; i++)
-		this->steiner_add(st_polygon_centroid);
 }
 
 std::vector<std::pair<std::string, std::string>> triangulation_t::get_steiner_str()
