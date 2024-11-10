@@ -446,25 +446,33 @@ void triangulation_t::steiner_add(const int method)
 	}
 }
 
+bool triangulation_t::exit_early()
+{
+	if (this->obtuse == 0)
+		return true;
+	
+	if (this->steiner > this->start_obtuse * 3)
+		return true;
+	if (this->start_obtuse * 3 - this->steiner < this->obtuse)
+		return true;
+	
+	return false;
+}
+
 void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 {
+	if (depth == 0)
+		return;
+	if (this->exit_early())
+		return;
+
 	if (PRINT_RECURSION_TREE) {
 		cout_space(depth);
 		if (this->progression_check == progression_less_equal)
 			std::cout << ".";
 		std::cout << depth << std::endl;
 	}
-	if (depth == 0)
-		return;
-	if (this->obtuse == 0)
-		return;
-	/*
-	if (this->steiner > this->start_obtuse * 3)
-		return;
-	if (this->start_obtuse * 3 - this->steiner < this->obtuse)
-		return;
-	*/
-
+	
 	struct triangulation_t best = *this;
 	struct triangulation_t current = *this;
 
@@ -510,14 +518,8 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 			&& (current.obtuse <= best.obtuse))
 			best = current;
 
-		if (best.obtuse == 0)
+		if (best.exit_early())
 			break;
-		/*
-		if (best.steiner > best.start_obtuse * 3)
-			break;
-		if (best.start_obtuse * 3 - best.steiner < best.obtuse)
-			break;
-		*/
 
 		if (current.cdt != this->cdt) {
 			if (current.obtuse < this->obtuse)
@@ -530,14 +532,8 @@ void triangulation_t::steiner_mixed_recursive(unsigned int depth)
 			if (this->progression_check == progression_less_equal
 				&& (current.obtuse <= best.obtuse))
 				best = current;
-			if (best.obtuse == 0)
+			if (best.exit_early())
 				break;
-			/*
-			if (best.steiner > best.start_obtuse * 3)
-				break;
-			if (best.start_obtuse * 3 - best.steiner < best.obtuse)
-				break;
-			*/
 		}
 	}
 	*this = best;
