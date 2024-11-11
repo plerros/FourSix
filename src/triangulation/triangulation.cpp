@@ -483,7 +483,7 @@ void triangulation_t::steiner_add(const int method)
 			this->steiner_polygon_centroid(&steiner_pts);
 			break;
 		case st_projection:
-			this->steiner_projection_outward(NULL);
+			this->steiner_projection_outward(&steiner_pts);
 			break;
 		case st_projection_all:
 			this->steiner_projection(NULL);

@@ -18,7 +18,6 @@ enum steiner_method_enum {
 	st_unused
 };
 
-
 class triangulation_t
 {
 	private:
