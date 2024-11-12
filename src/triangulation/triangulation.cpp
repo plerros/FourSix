@@ -1,5 +1,6 @@
 #include <iterator>
 #include <random>
+#include <limits>
 
 #include "configuration.hpp"
 
@@ -48,12 +49,6 @@ static void print_st_method(int method)
 	if (method < st_end)
 		std::cout << name[method] << std::endl;
 	#endif
-}
-
-static void cout_space(size_t n)
-{
-	for (unsigned int i = 0; i < n; i++)
-		std::cout << " ";
 }
 
 // Class functions
@@ -461,8 +456,9 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 	}
 }
 
-void triangulation_t::steiner_add(const int method)
+void triangulation_t::steiner_add(const int method, size_t max)
 {
+	size_t amount = 0;
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::vector<CDT::Point> steiner_pts;
@@ -486,7 +482,12 @@ void triangulation_t::steiner_add(const int method)
 			this->steiner_projection_outward(&steiner_pts);
 			break;
 		case st_projection_all:
-			this->steiner_projection(NULL);
+			if (max == SIZE_MAX) {
+				this->steiner_projection(NULL);
+			}
+			else {
+				this->steiner_projection(&steiner_pts);
+			}
 			break;
 		default:
 			// maybe error?
@@ -503,7 +504,10 @@ void triangulation_t::steiner_add(const int method)
 			*this = current;
 			this->method_performance[method]++;
 			print_st_method(method);
-			//return;
+			amount++;
+
+			if (amount >= max)
+				return;
 		}
 
 		if (this->progression_check == progression_less_equal
@@ -518,12 +522,19 @@ void triangulation_t::steiner_add(const int method)
 			*/
 			*this = current;
 			print_st_method(method);
-			//return;
+			amount++;
+
+			if (amount >= max)
+				return;
 		}
 
 		if (this->obtuse == 0)
 			return;
 	}
+}
+void triangulation_t::steiner_add(const int method)
+{
+	this->steiner_add(method, SIZE_MAX);
 }
 
 bool triangulation_t::exit_early()
@@ -537,82 +548,6 @@ bool triangulation_t::exit_early()
 		return true;
 	
 	return false;
-}
-
-void triangulation_t::steiner_mixed_recursive(unsigned int depth)
-{
-	if (depth == 0)
-		return;
-	if (this->exit_early())
-		return;
-
-	if (PRINT_RECURSION_TREE) {
-		std::cout << this->obtuse << " \t| ";
-		std::cout << this->steiner << " \t|";
-		cout_space(depth);
-		if (this->progression_check == progression_less_equal)
-			std::cout << ".";
-		std::cout << depth << std::endl;
-	}
-	
-	struct triangulation_t best = *this;
-	struct triangulation_t current = *this;
-
-	for (int method = st_start + 1; method < st_end; method++) {
-		//if (this->history.size() > 0 && this->history.back() == method)
-		//	continue;
-
-		current = *this;
-
-		bool skip_flag = false;
-
-		switch(method) {
-			// allow statements to fall through
-			case st_polygon_centroid:
-			case st_centroid:
-			case st_constraint_random:
-			case st_neighbor_random:
-				if (this->progression_check == progression_less
-					&& (best.obtuse != this->obtuse))
-					skip_flag = true;
-				break;
-			case st_projection_all:
-				// prevent projection_all from running after projection.
-				if (this->history.size() > 0  && this->history.back() == st_projection)
-					skip_flag = true;
-				break;
-			default:
-				break;
-		}
-		if (!skip_flag)
-			current.steiner_add(method);
-
-		if (this->progression_check == progression_less
-			&& (current.obtuse < best.obtuse))
-			best = current;
-		if (this->progression_check == progression_less_equal
-			&& (current.obtuse <= best.obtuse))
-			best = current;
-
-		if (best.exit_early())
-			break;
-
-		if (current.cdt != this->cdt) {
-			if (current.obtuse < this->obtuse)
-				current.steiner_mixed_recursive(depth - 1);
-			if (current.obtuse == this->obtuse)
-				current.steiner_mixed_recursive(depth);
-			if (this->progression_check == progression_less
-				&& (current.obtuse < best.obtuse))
-				best = current;
-			if (this->progression_check == progression_less_equal
-				&& (current.obtuse <= best.obtuse))
-				best = current;
-			if (best.exit_early())
-				break;
-		}
-	}
-	*this = best;
 }
 
 std::vector<std::pair<std::string, std::string>> triangulation_t::get_steiner_str()

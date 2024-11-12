@@ -36,3 +36,9 @@ bool is_obtuse(K::Triangle_2 triangle)
 	}
 	return false;
 }
+
+void cout_space(size_t n)
+{
+	for (unsigned int i = 0; i < n; i++)
+		std::cout << " ";
+}

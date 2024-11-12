@@ -3,6 +3,8 @@
 #include "configuration.hpp"
 #include "data_in.hpp"
 
+enum optim_method_enum{om_local, om_sa, om_ant};
+
 class data_t
 {
 	private:
@@ -15,6 +17,16 @@ class data_t
 		std::vector<std::pair<CDT::Point, CDT::Point>> constraints;
 		std::vector<K::Segment_2> constraint_segments;
 		std::vector<CDT::Point> constraint_mid_pts;
+
+		std::vector<int> optim_methods;
+
+		double parameter_a;
+		double parameter_b;
+		double parameter_xi;
+		double parameter_psi;
+		double parameter_lambda;
+		unsigned int parameter_kappa;
+		unsigned int parameter_L;
 
 	public:
 		data_t(data_in d);

@@ -58,8 +58,11 @@ class triangulation_t
 		void steiner_neighbor_random(std::vector<CDT::Point> *steiner_pts);
 
 		void steiner_add(int method);
+		void steiner_add(int method, size_t max); // Add up to [max] steiner points using [method]
 
-		void steiner_mixed(unsigned int retries);
-		void steiner_mixed_recursive(unsigned int depth);
-
+		// Optimization Methods
+		void optim_mixed_recursive(unsigned int depth); // My initial attempt
+		void optim_local_search(unsigned int depth);
+		void optim_simulated_annealing();
+		void optim_ant_colony();
 };

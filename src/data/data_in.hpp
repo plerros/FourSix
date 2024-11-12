@@ -10,6 +10,13 @@ class data_in
 		std::vector<size_t> region_boundary;
 		std::vector<std::pair<size_t, size_t>> constraints;
 
+		/*
+		 * delauney:
+		 * True  == Start from delauney
+		 * False == Start from my own triangulation
+		 */
+		bool delauney;
+
 	public:
 		data_in(boost::json::value const& jv);
 		void print();

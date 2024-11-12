@@ -23,6 +23,10 @@ add_executable(FourSix
 	src/helper/helper.cpp
 	src/main.cpp
 	src/obtuse_polygon/obtuse_polygon.cpp
+	src/optimization_methods/ant_colony.cpp
+	src/optimization_methods/local_search.cpp
+	src/optimization_methods/mixed_recursive.cpp
+	src/optimization_methods/simulated_annealing.cpp
 	src/triangulation/triangulation.cpp
 	)
 

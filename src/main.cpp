@@ -43,9 +43,12 @@ int main(int argc, char** argv) {
 		if (triangulation.size_obtuse() > 0 && depth < 5)
 			depth = 5;
 
-		triangulation.steiner_mixed_recursive(depth);
+		
+		triangulation.optim_mixed_recursive(depth);
 		triangulation.set_progression_check(progression_less_equal);
-		triangulation.steiner_mixed_recursive(depth);
+		triangulation.optim_mixed_recursive(depth);
+		
+		triangulation.optim_local_search(triangulation.size_obtuse());
 
 
 		// Runtime end
