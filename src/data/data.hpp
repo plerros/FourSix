@@ -18,6 +18,8 @@ class data_t
 		std::vector<K::Segment_2> constraint_segments;
 		std::vector<CDT::Point> constraint_mid_pts;
 
+		CGAL::Polygon_2<K> boundary_pgn;
+
 		std::vector<int> optim_methods;
 
 		double parameter_a;

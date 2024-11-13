@@ -22,6 +22,8 @@ data_t::data_t(data_in d)
 	}
 
 	auto const boundary = d.get_boundary();
+	K traits = K();
+	this->boundary_pgn=CGAL::Polygon_2(traits);
 
 	for (size_t i = 0; i < boundary.size(); i++) {
 		std::pair<CDT::Point, CDT::Point> edge;
@@ -34,6 +36,7 @@ data_t::data_t(data_in d)
 		this->boundary.push_back(edge);
 		this->boundary_pts.push_back(edge.first);
 		this->boundary_segments.push_back(K::Segment_2(edge.first, edge.second));
+		this->boundary_pgn.push_back(edge.first);
 	}
 
 	for (const auto& edge_id : d.get_constraints()) {
@@ -124,13 +127,5 @@ std::vector<CDT::Point> data_t::get_constraint_mid_pts()
 
 bool data_t::inside(CDT::Point pt)
 {
-	K traits = K();
-	CDT::Point *front = &(this->boundary_pts.front());
-	CDT::Point *back = &(this->boundary_pts.back());
-
-	CGAL::Polygon_2 pgn(traits);
-	for (auto it = this->boundary_pts.begin(); it < this->boundary_pts.end(); it++)
-		pgn.push_back(*it);
-
-	return (! pgn.has_on_unbounded_side(pt));
+	return (! this->boundary_pgn.has_on_unbounded_side(pt));
 }
