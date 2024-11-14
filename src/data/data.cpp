@@ -129,3 +129,8 @@ bool data_t::inside(CDT::Point pt)
 {
 	return (! this->boundary_pgn.has_on_unbounded_side(pt));
 }
+
+bool data_t::on_boundary(CDT::Point pt)
+{
+	return (this->boundary_pgn.has_on_boundary(pt));
+}

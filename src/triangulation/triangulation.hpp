@@ -24,12 +24,14 @@ class triangulation_t
 		CDT cdt;
 		size_t start_obtuse;
 		size_t obtuse;
+		size_t outside_obtuse;
 		size_t steiner;
 		data_t *data;
 		int progression_check;
 		std::vector<int> history;
 		int method_performance[st_end];
 
+		void update_outside_obtuse();
 		void insert(CDT::Point steiner, int method);
 		bool exit_early();
 		void steiner_projection_internal(std::vector<CDT::Point> *inward, std::vector<CDT::Point> *outward);

@@ -41,6 +41,7 @@ class data_t
 		std::vector<K::Segment_2> get_constraint_segments();
 		std::vector<CDT::Point> get_constraint_mid_pts();
 		bool inside(CDT::Point pt);
+		bool on_boundary(CDT::Point pt);
 
 		void final_triangulation();
 };

@@ -33,6 +33,17 @@ static size_t count_obtuse(CDT *cdt, data_t *data)
 	return ret;
 }
 
+static size_t count_all_obtuse(CDT *cdt, data_t *data)
+{
+	size_t ret = 0;
+	for (auto it = cdt->finite_faces_begin(); it != cdt->finite_faces_end(); it++) {
+		K::Triangle_2 triangle = cdt->triangle(it);
+		if (is_obtuse(triangle))
+			ret++;
+	}
+	return ret;
+}
+
 static void print_st_method(int method)
 {
 	#if PRINT_METHODS
@@ -65,6 +76,7 @@ triangulation_t::triangulation_t(data_t *data)
 	this->data = data;
 	this->start_obtuse = count_obtuse(&(this->cdt), this->data);
 	this->obtuse = this->start_obtuse;
+	this->update_outside_obtuse();
 	this->steiner = 0;
 	this->progression_check = progression_less;
 
@@ -72,11 +84,61 @@ triangulation_t::triangulation_t(data_t *data)
 		this->method_performance[i] = -1;
 }
 
+void triangulation_t::update_outside_obtuse()
+{
+	this->outside_obtuse = 0;
+	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
+		K::Triangle_2 triangle = this->cdt.triangle(it);
+		if (
+			!(data->inside(CGAL::centroid(triangle)))
+			&& is_obtuse(triangle)
+		)
+			this->outside_obtuse++;	
+	}
+}
+
+static inline bool never_on_boundary(int method)
+{
+	switch (method) {
+		case st_centroid:
+			return true;
+		case st_constraint_random:
+			return true;
+		case st_neighbor_random:
+			return true;
+		case st_polygon_centroid:
+			return true;
+		default:
+			return false;
+	}
+}
+
 void triangulation_t::insert(CDT::Point steiner, int method)
 {
-	this->cdt.insert(steiner);
+	// If we are sure the point won't be on the boundary, use a faster method
+	if (never_on_boundary(method)) {
+		if (!this->data->inside(steiner))
+			return;
+
+		this->cdt.insert(steiner);
+		this->obtuse = count_all_obtuse(&(this->cdt), this->data) - this->outside_obtuse;
+	} else {
+		if (!this->data->inside(steiner)
+		&& !this->data->on_boundary(steiner))
+			return;
+
+		this->cdt.insert(steiner);
+		if (this->data->on_boundary(steiner)) {
+			//this->obtuse = count_obtuse(&(this->cdt), this->data);
+			this->update_outside_obtuse();
+			this->obtuse = count_all_obtuse(&(this->cdt), this->data) - this->outside_obtuse;
+
+		} else {
+			this->obtuse = count_all_obtuse(&(this->cdt), this->data) - this->outside_obtuse;
+		}
+	}
+
 	this->steiner++;
-	this->obtuse = count_obtuse(&(this->cdt), this->data);
 	this->history.push_back(method);
 }
 
@@ -106,10 +168,27 @@ void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 {
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		CDT::Point steiner = CGAL::centroid(triangle);
-		if (!this->data->inside(steiner))
+		//if (!is_obtuse(triangle))
+		//	continue;
+
+/*
+		bool obtuse = false;
+		if (is_obtuse(triangle))
+			obtuse = true;
+		for (size_t i = 0; i < 3; i++) {
+			auto neighbor = it->neighbor(i);
+			if (this->cdt.is_infinite(neighbor))
+				continue;
+
+			K::Triangle_2 tmp = this->cdt.triangle(neighbor);
+			if(is_obtuse(tmp))
+				obtuse = true;
+		}
+
+		if (!obtuse)
 			continue;
-		
+*/
+		CDT::Point steiner = CGAL::centroid(triangle);
 		steiner_pts->push_back(steiner);
 	}
 }
@@ -118,10 +197,7 @@ void triangulation_t::steiner_circumcenter(std::vector<CDT::Point> *steiner_pts)
 {
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		CDT::Point steiner = CGAL::circumcenter(triangle);
-		if (!this->data->inside(steiner))
-			continue;
-		
+		CDT::Point steiner = CGAL::circumcenter(triangle);		
 		steiner_pts->push_back(steiner);
 	}
 }
@@ -250,9 +326,6 @@ void triangulation_t::steiner_projection_internal(std::vector<CDT::Point> *inwar
 			CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
 			CDT::Point steiner = l.projection(triangle.vertex(j));
 			
-			if (!this->data->inside(steiner))
-				continue;
-
 			// Sort to inward / outward
 			K::Segment_2 closest_segment1 = boundary_segments[0];
 			auto distance1 = CGAL::squared_distance(triangle.vertex(i), closest_segment1);
@@ -387,33 +460,28 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
 
+		//if (!is_obtuse(triangle))
+		//	continue;
+
+		bool obtuse = false;
+		if (is_obtuse(triangle))
+			obtuse = true;
+		for (size_t i = 0; i < 3 && !obtuse; i++) {
+			auto neighbor = it->neighbor(i);
+			if (this->cdt.is_infinite(neighbor))
+				continue;
+
+			K::Triangle_2 tmp = this->cdt.triangle(neighbor);
+			if(is_obtuse(tmp))
+				obtuse = true;
+		}
+
+		if (!obtuse)
+			continue;
+
 		size_t area = std::round(CGAL::to_double(triangle.area()));
 		if (area < 100)
 			continue;
-
-		std::array<CDT::Point, 3> pts;
-		for (size_t i = 0; i < 3; i++)
-			pts[i] = triangle.vertex(i);
-	
-		bool obtuse = false;
-		for (size_t i = 0; i < 3; i++) {
-			size_t j = i + 1;
-			if (j > 2)
-				j -= 3;
-			size_t k = j + 1;
-			if (k > 2)
-				k -= 3;
-			
-			if (CGAL::angle(pts[i], pts[j], pts[k]) == CGAL::OBTUSE) {
-				obtuse = true;
-				break;
-			}
-		}
-
-		if (obtuse)
-			continue;
-		
-		//triangles.push_back(pts);
 
 		for (size_t i = 0; i < 3; i++) {
 			auto neighbor = it->neighbor(i);	
