@@ -17,3 +17,5 @@ typedef CGAL::Constrained_Delaunay_triangulation_2<K, Tds, Itag> CDT;
 
 #define PRINT_RECURSION_TREE true
 #define PRINT_METHODS false
+
+#define OUTPUT_TRIANGULATION false

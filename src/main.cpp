@@ -61,17 +61,19 @@ int main(int argc, char** argv) {
 		std::cout << "obtuse " << triangulation.size_obtuse() << std::endl;
 		std::cout << "steiner " << triangulation.size_steiner() << std::endl;
 
-		data_out output(&data, &triangulation);
+		if (OUTPUT_TRIANGULATION) {
+			data_out output(&data, &triangulation);
 
-		CGAL::draw(triangulation.get_cdt());
+			CGAL::draw(triangulation.get_cdt());
 
-		if (argc == 3) {
-			std::ofstream outfile;
-			outfile.open(argv[2]);
-			pretty_print(outfile, output.get_jsonvalue());
-			outfile.close();
-		} else {
-			pretty_print(std::cout, output.get_jsonvalue());
+			if (argc == 3) {
+				std::ofstream outfile;
+				outfile.open(argv[2]);
+				pretty_print(outfile, output.get_jsonvalue());
+				outfile.close();
+			} else {
+				pretty_print(std::cout, output.get_jsonvalue());
+			}
 		}
 	}
 	catch(std::exception const& e) {
