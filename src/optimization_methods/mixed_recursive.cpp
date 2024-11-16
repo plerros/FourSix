@@ -17,8 +17,8 @@ void triangulation_t::optim_mixed_recursive(unsigned int depth)
 		std::cout << depth << std::endl;
 	}
 	
-	struct triangulation_t best = *this;
-	struct triangulation_t current = *this;
+	triangulation_t best = *this;
+	triangulation_t current = *this;
 
 	for (int method = st_start + 1; method < st_end; method++) {
 		//if (this->history.size() > 0 && this->history.back() == method)

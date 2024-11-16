@@ -29,7 +29,7 @@ int main(int argc, char** argv) {
 		//input.print();
 
 		data_t data{input};
-		struct triangulation_t triangulation(&data);
+		triangulation_t triangulation(&data);
 		std::cout << "Input Obtuse: " << triangulation.size_obtuse() << std::endl;
 
 		//CGAL::make_conforming_Delaunay_2(cdt);

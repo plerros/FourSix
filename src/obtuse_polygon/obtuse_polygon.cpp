@@ -235,7 +235,7 @@ bool obtuse_polygon_t::try_insert(K::Triangle_2 triangle)
 	}
 
 	{
-		struct obtuse_polygon_t tmp = *this;
+		obtuse_polygon_t tmp = *this;
 		tmp.sequence.push_back(triangle);
 		tmp.boundary_valid = false;
 		tmp.polygon_valid = false;

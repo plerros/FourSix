@@ -580,7 +580,7 @@ void triangulation_t::steiner_add(const int method, size_t max)
 	//std::shuffle(steiner_pts.begin(), steiner_pts.end(), g);
 
 	for (size_t i = 0; i < steiner_pts.size(); i++) {
-		struct triangulation_t current = *this;
+		triangulation_t current = *this;
 		current.insert(steiner_pts[i], method);
 
 		if (this->progression_check == progression_less
