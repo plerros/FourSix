@@ -171,7 +171,6 @@ void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 		//if (!is_obtuse(triangle))
 		//	continue;
 
-/*
 		bool obtuse = false;
 		if (is_obtuse(triangle))
 			obtuse = true;
@@ -187,7 +186,7 @@ void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 
 		if (!obtuse)
 			continue;
-*/
+
 		CDT::Point steiner = CGAL::centroid(triangle);
 		steiner_pts->push_back(steiner);
 	}
@@ -197,7 +196,24 @@ void triangulation_t::steiner_circumcenter(std::vector<CDT::Point> *steiner_pts)
 {
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
-		CDT::Point steiner = CGAL::circumcenter(triangle);		
+
+		bool obtuse = false;
+		if (is_obtuse(triangle))
+			obtuse = true;
+		for (size_t i = 0; i < 3; i++) {
+			auto neighbor = it->neighbor(i);
+			if (this->cdt.is_infinite(neighbor))
+				continue;
+
+			K::Triangle_2 tmp = this->cdt.triangle(neighbor);
+			if(is_obtuse(tmp))
+				obtuse = true;
+		}
+
+		if (!obtuse)
+			continue;
+
+		CDT::Point steiner = CGAL::circumcenter(triangle);
 		steiner_pts->push_back(steiner);
 	}
 }
