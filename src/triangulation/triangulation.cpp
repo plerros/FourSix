@@ -262,6 +262,20 @@ void triangulation_t::steiner_circumcenter(
 	}
 }
 
+void triangulation_t::steiner_midpoint(std::vector<CDT::Point> *steiner_pts)
+{
+	for (auto it = this->cdt.finite_edges_begin(); it != this->cdt.finite_edges_end(); it++) {
+		CDT::Edge e = *it;
+
+		auto v1 = e.first->vertex( (e.second+1)%3 );
+		auto v2 = e.first->vertex( (e.second+2)%3 );
+	
+		CDT::Point p1 = v1->point();
+		CDT::Point p2 = v2->point();
+		steiner_pts->push_back(CGAL::midpoint(p1, p2));
+	}
+}
+
 void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts)
 {
 	std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>> visited;
@@ -629,6 +643,9 @@ void triangulation_t::steiner_add(const int method, size_t max)
 			break;
 		case st_constraint_random:
 			this->steiner_constraint_random(&steiner_pts);
+			break;
+		case st_midpoint:
+			this->steiner_midpoint(&steiner_pts);
 			break;
 		case st_neighbor_random:
 			this->steiner_neighbor_random(&solutions);

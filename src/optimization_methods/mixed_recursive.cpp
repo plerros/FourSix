@@ -30,6 +30,7 @@ void triangulation_t::optim_mixed_recursive(unsigned int depth)
 
 		switch(method) {
 			// allow statements to fall through
+			case st_midpoint:
 			case st_polygon_centroid:
 			case st_centroid:
 			case st_constraint_random:

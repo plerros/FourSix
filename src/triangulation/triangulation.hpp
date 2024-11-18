@@ -16,6 +16,7 @@ enum steiner_method_enum {
 	st_circumcenter,
 	st_projection_outward,
 	st_projection_all,
+	st_midpoint,
 	st_polygon_centroid,
 	st_centroid,
 	st_constraint_random,
@@ -58,6 +59,7 @@ class triangulation_t
 		// Steiner operations
 		void steiner_centroid(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *steiner_pts);
 		void steiner_circumcenter(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions);
+		void steiner_midpoint(std::vector<CDT::Point> *steiner_pts);
 		void steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts);
 
 		void steiner_projection(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions);
