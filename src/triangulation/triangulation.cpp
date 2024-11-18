@@ -264,6 +264,7 @@ void triangulation_t::steiner_circumcenter(
 
 void triangulation_t::steiner_midpoint(std::vector<CDT::Point> *steiner_pts)
 {
+	std::vector<std::pair<K::Segment_2, double>> longest;
 	for (auto it = this->cdt.finite_edges_begin(); it != this->cdt.finite_edges_end(); it++) {
 		CDT::Edge e = *it;
 
@@ -272,8 +273,19 @@ void triangulation_t::steiner_midpoint(std::vector<CDT::Point> *steiner_pts)
 	
 		CDT::Point p1 = v1->point();
 		CDT::Point p2 = v2->point();
-		steiner_pts->push_back(CGAL::midpoint(p1, p2));
+
+		K::Segment_2 seg(p1, p2);
+		double length = CGAL::to_double(seg.squared_length());
+
+		if (longest.size() == 0 || length > longest.back().second) {
+			std::pair<K::Segment_2, double> tmp;
+			tmp.first = seg;
+			tmp.second = length;
+			longest.push_back(tmp);
+		}
 	}
+	if (longest.size() > 0)
+		steiner_pts->push_back(CGAL::midpoint(longest.back().first));
 }
 
 void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts)
