@@ -18,6 +18,9 @@
 typedef CGAL::Delaunay_mesh_size_criteria_2<CDT> Criteria;
 typedef CGAL::Delaunay_mesher_2<CDT, Criteria>   Mesher;
 
+
+std::array<std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>>, st_end> global_tried;
+
 // Helper functions
 
 static size_t count_obtuse(CDT *cdt, data_t *data)
@@ -52,7 +55,7 @@ static void print_st_method(int method)
 	name[st_centroid] = "centroid";
 	name[st_circumcenter] = "circumcenter";
 	name[st_polygon_centroid] = "polygon";
-	name[st_projection] = "projection";
+	name[st_projection_outward] = "projection_outward";
 	name[st_projection_all] = "projection_all";
 	name[st_neighbor_random] = "neighbor";
 	name[st_constraint_random] = "constraint";
@@ -79,6 +82,8 @@ triangulation_t::triangulation_t(data_t *data)
 	this->update_outside_obtuse();
 	this->steiner = 0;
 	this->progression_check = progression_less;
+
+	this->tried = &global_tried;
 
 	for (size_t i = 0; i < st_end; i++)
 		this->method_performance[i] = -1;
@@ -142,6 +147,12 @@ void triangulation_t::insert(CDT::Point steiner, int method)
 	this->history.push_back(method);
 }
 
+static inline std::tuple<CDT::Point, CDT::Point, CDT::Point> triangle_to_tuple(K::Triangle_2 triangle)
+{
+	std::tuple<CDT::Point, CDT::Point, CDT::Point> ret(triangle.vertex(0), triangle.vertex(1), triangle.vertex(2));
+	return ret;
+}
+
 void triangulation_t::set_progression_check(int check)
 {
 	this->progression_check = check;
@@ -192,29 +203,73 @@ void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 	}
 }
 
-void triangulation_t::steiner_circumcenter(std::vector<CDT::Point> *steiner_pts)
+/*
+ * At least this or one of its neighbors are obtuse
+ */
+
+static inline bool detect_obtuse(
+	CDT *cdt,
+	CDT::Face_iterator *it,
+	K::Triangle_2 triangle)
 {
-	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
-		auto triangle = this->cdt.triangle(it);
+	if(is_obtuse(triangle))
+		return true;
 
-		bool obtuse = false;
-		if (is_obtuse(triangle))
-			obtuse = true;
-		for (size_t i = 0; i < 3; i++) {
-			auto neighbor = it->neighbor(i);
-			if (this->cdt.is_infinite(neighbor))
-				continue;
-
-			K::Triangle_2 tmp = this->cdt.triangle(neighbor);
-			if(is_obtuse(tmp))
-				obtuse = true;
-		}
-
-		if (!obtuse)
+	for (size_t i = 0; i < 3; i++) {
+		auto neighbor = (*it)->neighbor(i);
+		if (cdt->is_infinite(neighbor))
 			continue;
 
-		CDT::Point steiner = CGAL::circumcenter(triangle);
-		steiner_pts->push_back(steiner);
+		K::Triangle_2 tmp = cdt->triangle(neighbor);
+		if(is_obtuse(tmp))
+			return true;
+	}
+	return false;
+}
+
+/*
+ * At least this or one of its neighbors haven't been tried
+ */
+
+static inline bool detect_nottried(
+	CDT *cdt,
+	std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>> *tried,
+	CDT::Face_iterator *it,
+	K::Triangle_2 triangle)
+{
+	//return true;
+	if (tried->find(triangle_to_tuple(triangle)) == tried->end())
+		return true;
+
+	for (size_t i = 0; i < 3; i++) {
+		auto neighbor = (*it)->neighbor(i);
+		if (cdt->is_infinite(neighbor))
+			continue;
+
+		K::Triangle_2 tmp = cdt->triangle(neighbor);
+		if (tried->find(triangle_to_tuple(tmp)) == tried->end())
+			return true;
+	}
+	return false;
+}
+
+void triangulation_t::steiner_circumcenter(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
+{
+	const int method = st_circumcenter;
+
+	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
+		auto triangle = this->cdt.triangle(it);
+		if (!detect_obtuse(&(this->cdt), &it, triangle))
+			continue;
+		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+			continue;
+
+		std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+		solution.first = triangle;
+		solution.second.push_back(CGAL::circumcenter(triangle));
+
+		solutions->push_back(solution);
 	}
 }
 
@@ -308,12 +363,26 @@ void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_
 	}
 }
 
-void triangulation_t::steiner_projection_internal(std::vector<CDT::Point> *inward, std::vector<CDT::Point> *outward)
+void triangulation_t::steiner_projection_internal(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *inward,
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *outward,
+	const int method)
 {
+	assert (
+		method == st_projection_all
+		|| method == st_projection_outward
+		|| method == st_unused
+	);
+
 	std::vector<K::Segment_2> boundary_segments = this->data->get_boundary_segments();
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
+		if (!detect_obtuse(&(this->cdt), &it, triangle))
+			continue;
+		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+			continue;
+
 		std::array <CGAL::Vector_2<K>, 3> edge;
 
 		for (size_t i = 0; i < 3; i++) {
@@ -368,80 +437,116 @@ void triangulation_t::steiner_projection_internal(std::vector<CDT::Point> *inwar
 				distance1 < distance2
 				&& distance1 != 0
 			) {
-				if (inward != NULL)
-					inward->push_back(steiner);
+				if (inward != NULL) {
+					std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+					solution.first = triangle;
+					solution.second.push_back(steiner);
+					inward->push_back(solution);
+				}
 			} else {
-				if (outward != NULL)
-					outward->push_back(steiner);
+				if (outward != NULL) {
+					std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+					solution.first = triangle;
+					solution.second.push_back(steiner);
+					outward->push_back(solution);
+				}
 			}
 			break;
 		}
 	}
 }
 
-void triangulation_t::steiner_projection_inward(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_projection_inward(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
 {
-	std::vector<CDT::Point> local;
+	const int method = st_unused;
 
-	steiner_projection_internal(&local, NULL);
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local;
+	steiner_projection_internal(&local, NULL, method);
 
-	if (steiner_pts != NULL) {
-		steiner_pts->insert(steiner_pts->end(), local.begin(), local.end());
-		local.clear();
-	}
-	
-	for (size_t i = 0; i < local.size(); i++) {
-		this->insert(local[i], st_unused);
-		if (this->obtuse == 0)
-			return;
-	}
-}
-
-void triangulation_t::steiner_projection_outward(std::vector<CDT::Point> *steiner_pts)
-{
-	std::vector<CDT::Point> local;
-
-	steiner_projection_internal(NULL, &local);
-	
-	if (steiner_pts != NULL) {
-		steiner_pts->insert(steiner_pts->end(), local.begin(), local.end());
+	if (solutions != NULL) {
+		solutions->insert(solutions->end(), local.begin(), local.end());
 		local.clear();
 	}
 
 	for (size_t i = 0; i < local.size(); i++) {
-		this->insert(local[i], st_projection);
-		print_st_method(st_projection);
-		if (this->obtuse == 0)
-			return;
+		for (size_t j = 0; j < local.size(); j++) {
+			this->insert(local[i].second[j], method);
+			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
+
+			print_st_method(method);
+			if (this->obtuse == 0)
+				return;
+		}
 	}
 }
 
-void triangulation_t::steiner_projection(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_projection_outward(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
 {
-	std::vector<CDT::Point> local1;
-	std::vector<CDT::Point> local2;
+	int method = st_projection_outward;
+	if (solutions == NULL)
+		method = st_unused;
 
-	steiner_projection_internal(&local1, &local2);
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local;
+	steiner_projection_internal(NULL, &local, method);
+	
+	if (solutions != NULL) {
+		solutions->insert(solutions->end(), local.begin(), local.end());
+		local.clear();
+	}
 
-	if (steiner_pts != NULL) {
-		steiner_pts->insert(steiner_pts->end(), local1.begin(), local1.end());
-		steiner_pts->insert(steiner_pts->end(), local2.begin(), local2.end());
+	for (size_t i = 0; i < local.size(); i++) {
+		for (size_t j = 0; j < local.size(); j++) {
+			this->insert(local[i].second[j], method);
+			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
+
+			print_st_method(method);
+			if (this->obtuse == 0)
+				return;
+		}
+	}
+}
+
+void triangulation_t::steiner_projection(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
+{
+	int method = st_projection_all;
+	if (solutions == NULL)
+		method = st_projection_all;
+
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local1;
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local2;
+
+	steiner_projection_internal(&local1, &local2, method);
+
+	if (solutions != NULL) {
+		solutions->insert(solutions->end(), local1.begin(), local1.end());
+		solutions->insert(solutions->end(), local2.begin(), local2.end());
 		local1.clear();
 		local2.clear();
 	}
 
 	for (size_t i = 0; i < local1.size(); i++) {
-		this->insert(local1[i], st_projection_all);
-		print_st_method(st_projection_all);
-		if (this->obtuse == 0)
-			return;
+		for (size_t j = 0; j < local1[i].second.size(); j++) {
+			this->insert(local1[i].second[j], method);
+			(*(this->tried))[method].insert(triangle_to_tuple(local1[i].first));
+
+			print_st_method(method);
+			if (this->obtuse == 0)
+				return;
+		}
 	}
 
 	for (size_t i = 0; i < local2.size(); i++) {
-		this->insert(local2[i], st_projection_all);
-		print_st_method(st_projection_all);
-		if (this->obtuse == 0)
-			return;
+		for (size_t j = 0; j < local2[i].second.size(); j++) {
+			this->insert(local2[i].second[j], method);
+			(*(this->tried))[method].insert(triangle_to_tuple(local2[i].first));
+
+			print_st_method(method);
+			if (this->obtuse == 0)
+				return;
+		}
 	}
 }
 
@@ -469,30 +574,18 @@ void triangulation_t::steiner_constraint_random(std::vector<CDT::Point> *steiner
 	}
 }
 
-void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_neighbor_random(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
 {
+	const int method = st_neighbor_random;
 	std::vector<K::Triangle_2> triangles;
 
 	for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
 		auto triangle = this->cdt.triangle(it);
 
-		//if (!is_obtuse(triangle))
-		//	continue;
-
-		bool obtuse = false;
-		if (is_obtuse(triangle))
-			obtuse = true;
-		for (size_t i = 0; i < 3 && !obtuse; i++) {
-			auto neighbor = it->neighbor(i);
-			if (this->cdt.is_infinite(neighbor))
-				continue;
-
-			K::Triangle_2 tmp = this->cdt.triangle(neighbor);
-			if(is_obtuse(tmp))
-				obtuse = true;
-		}
-
-		if (!obtuse)
+		if (!detect_obtuse(&(this->cdt), &it, triangle))
+			continue;
+		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
 		size_t area = std::round(CGAL::to_double(triangle.area()));
@@ -536,7 +629,15 @@ void triangulation_t::steiner_neighbor_random(std::vector<CDT::Point> *steiner_p
 			amount = area / 10;
 
 		CGAL::Random_points_in_triangle_2<CDT::Point> generator(triangle.vertex(0), triangle.vertex(1), triangle.vertex(2));
-		std::copy_n(generator, amount, std::back_inserter(*steiner_pts));
+
+		std::vector<CDT::Point> steiner_pts;
+		std::copy_n(generator, amount, std::back_inserter(steiner_pts));
+
+		std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+		solution.first = triangle;
+		solution.second = steiner_pts;
+
+		solutions->push_back(solution);
 	}
 }
 
@@ -546,31 +647,32 @@ void triangulation_t::steiner_add(const int method, size_t max)
 	std::random_device rd;
 	std::mt19937 g(rd());
 	std::vector<CDT::Point> steiner_pts;
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> solutions;
 	switch (method){
 		case st_centroid:
 			this->steiner_centroid(&steiner_pts);
 			break;
 		case st_circumcenter:
-			this->steiner_circumcenter(&steiner_pts);
+			this->steiner_circumcenter(&solutions);
 			break;
 		case st_constraint_random:
 			this->steiner_constraint_random(&steiner_pts);
 			break;
 		case st_neighbor_random:
-			this->steiner_neighbor_random(&steiner_pts);
+			this->steiner_neighbor_random(&solutions);
 			break;
 		case st_polygon_centroid:
 			this->steiner_polygon_centroid(&steiner_pts);
 			break;
-		case st_projection:
-			this->steiner_projection_outward(&steiner_pts);
+		case st_projection_outward:
+			this->steiner_projection_outward(&solutions);
 			break;
 		case st_projection_all:
 			if (max == SIZE_MAX) {
 				this->steiner_projection(NULL);
 			}
 			else {
-				this->steiner_projection(&steiner_pts);
+				this->steiner_projection(&solutions);
 			}
 			break;
 		default:
@@ -614,6 +716,43 @@ void triangulation_t::steiner_add(const int method, size_t max)
 
 		if (this->obtuse == 0)
 			return;
+	}
+
+
+	for (size_t i = 0; i < solutions.size(); i++) {
+		(*(this->tried))[method].insert(triangle_to_tuple(solutions[i].first));
+
+		for (size_t j = 0; j < solutions[i].second.size(); j++) {
+			triangulation_t current = *this;
+			current.insert(solutions[i].second[j], method);
+
+
+			if (this->progression_check == progression_less
+				&& current.obtuse < this->obtuse) {
+				*this = current;
+				this->method_performance[method]++;
+				print_st_method(method);
+				amount++;
+
+				if (amount >= max)
+					return;
+			}
+
+			if (this->progression_check == progression_less_equal
+				&& current.obtuse <= this->obtuse
+				&& method != st_constraint_random
+				&& method != st_neighbor_random){
+				*this = current;
+				print_st_method(method);
+				amount++;
+
+				if (amount >= max)
+					return;
+			}
+
+			if (this->obtuse == 0)
+				return;
+		}
 	}
 }
 void triangulation_t::steiner_add(const int method)

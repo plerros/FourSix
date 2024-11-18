@@ -67,9 +67,9 @@ data_t::data_t(data_in d)
 	for (auto it = this->constraints.begin(); it < this->constraints.end();) {
 		std::pair<CDT::Point, CDT::Point> edge = *it;
 		int inside = 0;
-		if (std::find(this->points.begin(), this->points.end(), edge.first) != points.end())
+		if (std::find(this->points.begin(), this->points.end(), edge.first) != this->points.end())
 			inside++;
-		if (std::find(this->points.begin(), this->points.end(), edge.second) != points.end())
+		if (std::find(this->points.begin(), this->points.end(), edge.second) != this->points.end())
 			inside++;
 
 		if (inside == 2) {

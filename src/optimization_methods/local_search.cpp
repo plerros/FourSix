@@ -24,7 +24,7 @@ void triangulation_t::optim_local_search(unsigned int depth)
 			// prevent projection_all from running after projection.
 			if (method == st_projection_all
 				&& this->history.size() > 0
-				&& this->history.back() == st_projection)
+				&& this->history.back() == st_projection_outward)
 				continue;
 			
 			triangulation_t current = *this;

@@ -40,7 +40,7 @@ void triangulation_t::optim_mixed_recursive(unsigned int depth)
 				break;
 			case st_projection_all:
 				// prevent projection_all from running after projection.
-				if (this->history.size() > 0  && this->history.back() == st_projection)
+				if (this->history.size() > 0  && this->history.back() == st_projection_outward)
 					skip_flag = true;
 				break;
 			default:
@@ -48,6 +48,8 @@ void triangulation_t::optim_mixed_recursive(unsigned int depth)
 		}
 		if (!skip_flag)
 			current.steiner_add(method);
+
+		//this->tried = current.tried;
 
 		if (this->progression_check == progression_less
 			&& (current.obtuse < best.obtuse))
@@ -74,5 +76,7 @@ void triangulation_t::optim_mixed_recursive(unsigned int depth)
 				break;
 		}
 	}
+	//best.tried = this->tried;
+
 	*this = best;
 }
