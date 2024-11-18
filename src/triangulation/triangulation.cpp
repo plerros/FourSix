@@ -515,33 +515,19 @@ void triangulation_t::steiner_projection(
 	if (solutions == NULL)
 		method = st_projection_all;
 
-	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local1;
-	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local2;
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local;
 
-	steiner_projection_internal(&local1, &local2, method);
+	steiner_projection_internal(&local, &local, method);
 
 	if (solutions != NULL) {
-		solutions->insert(solutions->end(), local1.begin(), local1.end());
-		solutions->insert(solutions->end(), local2.begin(), local2.end());
-		local1.clear();
-		local2.clear();
+		solutions->insert(solutions->end(), local.begin(), local.end());
+		local.clear();
 	}
 
-	for (size_t i = 0; i < local1.size(); i++) {
-		for (size_t j = 0; j < local1[i].second.size(); j++) {
-			this->insert(local1[i].second[j], method);
-			(*(this->tried))[method].insert(triangle_to_tuple(local1[i].first));
-
-			print_st_method(method);
-			if (this->obtuse == 0)
-				return;
-		}
-	}
-
-	for (size_t i = 0; i < local2.size(); i++) {
-		for (size_t j = 0; j < local2[i].second.size(); j++) {
-			this->insert(local2[i].second[j], method);
-			(*(this->tried))[method].insert(triangle_to_tuple(local2[i].first));
+	for (size_t i = 0; i < local.size(); i++) {
+		for (size_t j = 0; j < local[i].second.size(); j++) {
+			this->insert(local[i].second[j], method);
+			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
 			print_st_method(method);
 			if (this->obtuse == 0)

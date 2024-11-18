@@ -43,13 +43,11 @@ int main(int argc, char** argv) {
 		if (triangulation.size_obtuse() > 0 && depth < 5)
 			depth = 5;
 
-		
 		triangulation.optim_mixed_recursive(depth);
 		triangulation.set_progression_check(progression_less_equal);
 		triangulation.optim_mixed_recursive(depth);
 		
-		triangulation.optim_local_search(triangulation.size_obtuse());
-
+		//triangulation.optim_local_search(triangulation.size_obtuse());
 
 		// Runtime end
 		auto t2 = std::chrono::high_resolution_clock::now();
