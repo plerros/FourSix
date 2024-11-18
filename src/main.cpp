@@ -12,15 +12,22 @@
 #include "triangulation.hpp"
 
 int main(int argc, char** argv) {
-	if (argc != 2 && argc != 3) {
-		std::cerr << "Usage: FourSix <input json>" << std::endl;
-		std::cerr << "       FourSix <input json> <output json>" << std::endl;
+	if (argc != 3 && argc != 5) {
+		std::cerr << "Usage: FourSix -i <input json>" << std::endl;
+		std::cerr << "       FourSix -i <input json> -o <output json>" << std::endl;
+		return EXIT_FAILURE;
+	}
+	if (argc == 5 && OUTPUT_TRIANGULATION == false) {
+		std::cerr << "Usage: FourSix -i <input json>" << std::endl;
+		std::cout << std::endl;
+		std::cout << "Unavailable with current configuration.h:" << std::endl;
+		std::cerr << "       FourSix -i <input json> -o <output json> | (needs OUTPUT_TRIANGULATION == true)" << std::endl;
 		return EXIT_FAILURE;
 	}
 
 	try {
 		// Parse the file as JSON
-		auto const jv = parse_file(argv[1]);
+		auto const jv = parse_file(argv[2]);
 
 		// Now pretty-print the value
 		//pretty_print(std::cout, jv);
@@ -43,12 +50,42 @@ int main(int argc, char** argv) {
 		if (triangulation.size_obtuse() > 0 && depth < 5)
 			depth = 5;
 
-		triangulation.optim_mixed_recursive(depth);
-		triangulation.set_progression_check(progression_less_equal);
-		triangulation.optim_mixed_recursive(depth);
-		
-		//triangulation.optim_local_search(triangulation.size_obtuse());
+		for (int i = 0; i < data.get_optim_methods().size(); i++) {
+			switch (data.get_optim_methods()[i]) {
+				case optim_mixed_recursive:
+					triangulation.optim_mixed_recursive(depth);
+					triangulation.set_progression_check(progression_less_equal);
+					triangulation.optim_mixed_recursive(depth);
+					break;
 
+				case optim_local_search:
+					triangulation.optim_local_search(
+						data.get_parameter_L());
+					break;
+
+				case optim_simulated_annealing:
+					triangulation.optim_simulated_annealing(
+						data.get_parameter_a(),
+						data.get_parameter_b(),
+						data.get_parameter_L());
+					break;
+
+				case optim_ant_colony:
+					triangulation.optim_ant_colony(
+						data.get_parameter_a(),
+						data.get_parameter_b(),
+						data.get_parameter_xi(),
+						data.get_parameter_psi(),
+						data.get_parameter_lambda(),
+						data.get_parameter_kappa(),
+						data.get_parameter_L());
+					break;
+
+				default:
+					break;
+			}
+		}
+		
 		// Runtime end
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
@@ -64,9 +101,9 @@ int main(int argc, char** argv) {
 
 			CGAL::draw(triangulation.get_cdt());
 
-			if (argc == 3) {
+			if (argc == 5) {
 				std::ofstream outfile;
-				outfile.open(argv[2]);
+				outfile.open(argv[5]);
 				pretty_print(outfile, output.get_jsonvalue());
 				outfile.close();
 			} else {

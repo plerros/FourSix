@@ -44,4 +44,13 @@ class data_t
 		bool on_boundary(CDT::Point pt);
 
 		void final_triangulation();
+
+		std::vector<int> get_optim_methods();
+		double get_parameter_a();
+		double get_parameter_b();
+		double get_parameter_xi();
+		double get_parameter_psi();
+		double get_parameter_lambda();
+		unsigned int get_parameter_kappa();
+		unsigned int get_parameter_L();
 };

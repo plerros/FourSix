@@ -809,19 +809,7 @@ std::vector<std::pair<size_t, size_t>> triangulation_t::get_edges()
 	
 		CDT::Point p1 = v1->point();
 		CDT::Point p2 = v2->point();
-		std::pair<CDT::Point, CDT::Point> points1 (p1, p2);
-		std::pair<CDT::Point, CDT::Point> points2 (p2, p1);
-
-		if (std::find(input_boundary.begin(), input_boundary.end(), points1) != input_boundary.end())
-			continue;
-		if (std::find(input_boundary.begin(), input_boundary.end(), points2) != input_boundary.end())
-			continue;
-
-		if (std::find(input_constraints.begin(), input_constraints.end(), points1) != input_constraints.end())
-			continue;
-		if (std::find(input_constraints.begin(), input_constraints.end(), points2) != input_constraints.end())
-			continue;
-
+		
 		CDT::Point center = CGAL::midpoint(p1, p2);
 		if (!this->data->inside(center))
 			continue;

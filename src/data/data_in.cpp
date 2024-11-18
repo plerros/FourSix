@@ -1,10 +1,13 @@
 #include <boost/json.hpp>
 #include <iostream>
 
+#include "configuration.hpp"
 #include "data_in.hpp"
 
 data_in::data_in(boost::json::value const& jv)
 {
+	boost::json::object const& root{jv.as_object()};
+
 	this->instance_uid = jv.at("instance_uid").as_string();
 	assert(jv.at("num_points").as_int64() >= 0);
 
@@ -67,6 +70,73 @@ skip_region_boundary:
 	}
 skip_additional_constraints:
 
+	this->optim_method = optim_none;
+	if (root.if_contains("method")) {
+		auto tmp = jv.at("method").as_string();
+		if (tmp == "ls")
+			this->optim_method = optim_local_search;
+		if (tmp == "sa")
+			this->optim_method = optim_simulated_annealing;
+		if (tmp == "ant")
+			this->optim_method = optim_ant_colony;
+	}
+
+	this->delauney = false;
+	if (root.if_contains("delauney")) {
+		auto tmp = jv.at("delauney").as_bool();
+		this->delauney=tmp;
+	}
+
+	this->parameter_a      = 1.0;
+	this->parameter_b      = 1.0;
+	this->parameter_xi     = 0.0;
+	this->parameter_psi    = 0.0;
+	this->parameter_lambda = 0.0;
+	this->parameter_kappa  = 0;
+	this->parameter_L      = 0;
+
+	if (root.if_contains("parameters")) {
+		auto parameters = jv.at("parameters").as_object();
+		auto pjv = jv.at("parameters");
+
+		if (parameters.if_contains("alpha")) {
+			auto tmp = pjv.at("alpha").as_double();
+			this->parameter_a = tmp;
+		}
+		
+		if (parameters.if_contains("beta")) {
+			auto tmp = pjv.at("beta").as_double();
+			this->parameter_b = tmp;
+		}
+
+		if (parameters.if_contains("xi")) {
+			auto tmp = pjv.at("xi").as_double();
+			this->parameter_xi = tmp;
+		}
+
+		if (parameters.if_contains("psi")) {
+			auto tmp = pjv.at("psi").as_double();
+			this->parameter_psi = tmp;
+		}
+
+		if (parameters.if_contains("lambda")) {
+			auto tmp = pjv.at("lambda").as_double();
+			this->parameter_lambda = tmp;
+		}
+
+		if (parameters.if_contains("kappa")) {
+			assert(pjv.at("kappa").as_int64() >= 0);
+			auto tmp = pjv.at("kappa").as_int64();
+			this->parameter_kappa = tmp;
+		}
+
+		if (parameters.if_contains("L")) {
+			assert(pjv.at("L").as_int64() >= 0);
+			auto tmp = pjv.at("L").as_int64();
+			this->parameter_L = tmp;
+		}
+	}
+
 	if (1) {}; // Needed for previous label
 }
 
@@ -98,4 +168,49 @@ std::vector<size_t>  data_in::get_boundary()
 std::vector<std::pair<size_t, size_t>> data_in::get_constraints()
 {
 	return this->constraints;
+}
+
+int data_in::get_optim_method()
+{
+	return this->optim_method;
+}
+
+bool data_in::get_delauney()
+{
+	return this->delauney;
+}
+
+double data_in::get_parameter_a()
+{
+	return this->parameter_a;
+}
+
+double data_in::get_parameter_b()
+{
+	return this->parameter_b;
+}
+
+double data_in::get_parameter_xi()
+{
+	return this->parameter_xi;
+}
+
+double data_in::get_parameter_psi()
+{
+	return this->parameter_psi;
+}
+
+double data_in::get_parameter_lambda()
+{
+	return this->parameter_lambda;
+}
+
+unsigned int data_in::get_parameter_kappa()
+{
+	return this->parameter_kappa;
+}
+
+unsigned int data_in::get_parameter_L()
+{
+	return this->parameter_L;
 }

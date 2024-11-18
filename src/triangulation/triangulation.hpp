@@ -76,6 +76,16 @@ class triangulation_t
 		// Optimization Methods
 		void optim_mixed_recursive(unsigned int depth); // My initial attempt
 		void optim_local_search(unsigned int depth);
-		void optim_simulated_annealing();
-		void optim_ant_colony();
+		void optim_simulated_annealing(
+			double obtuse_constant,
+			double steiner_constant,
+			unsigned int depth);
+		void optim_ant_colony(
+			double obtuse_constant,
+			double steiner_constant,
+			double heuristic_constant,
+			double pherormone_constant,
+			double evaporation_rate,
+			double ants_amount,
+			unsigned int depth);
 };

@@ -10,7 +10,10 @@
  * 	L == depth
  */
 
-void triangulation_t::optim_simulated_annealing ()
+void triangulation_t::optim_simulated_annealing (
+	double obtuse_constant,
+	double steiner_constant,
+	unsigned int depth)
 {
 
 }

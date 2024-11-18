@@ -10,11 +10,10 @@
 
 void triangulation_t::optim_local_search(unsigned int depth)
 {
-	for (; depth > 0; depth--) {
+	for (; depth > 0 && this->obtuse > 0; depth--) {
 		if (PRINT_RECURSION_TREE) {
 			std::cout << this->obtuse << " \t| ";
-			std::cout << this->steiner << " \t|";
-			cout_space(depth);
+			std::cout << this->steiner << " \t| ";
 			if (this->progression_check == progression_less_equal)
 				std::cout << ".";
 			std::cout << depth << std::endl;

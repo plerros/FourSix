@@ -84,6 +84,20 @@ data_t::data_t(data_in d)
 	// Create constraint midpoints
 	for (auto it = this->constraints.begin(); it < this->constraints.end(); it++)
 		this->constraint_mid_pts.push_back(CGAL::midpoint(it->first, it->second));
+
+	if (!d.get_delauney())
+		this->optim_methods.push_back(optim_mixed_recursive);
+	
+	if (d.get_optim_method() != optim_none)
+		this->optim_methods.push_back(d.get_optim_method());
+	
+	this->parameter_a      = d.get_parameter_a();
+	this->parameter_b      = d.get_parameter_b();
+	this->parameter_xi     = d.get_parameter_xi();
+	this->parameter_psi    = d.get_parameter_psi();
+	this->parameter_lambda = d.get_parameter_lambda();
+	this->parameter_kappa  = d.get_parameter_kappa();
+	this->parameter_L      = d.get_parameter_L();
 }
 
 void data_t::print()
@@ -133,4 +147,44 @@ bool data_t::inside(CDT::Point pt)
 bool data_t::on_boundary(CDT::Point pt)
 {
 	return (this->boundary_pgn.has_on_boundary(pt));
+}
+
+std::vector<int> data_t::get_optim_methods()
+{
+	return this->optim_methods;
+}
+
+double data_t::get_parameter_a()
+{
+	return this->parameter_a;
+}
+
+double data_t::get_parameter_b()
+{
+	return this->parameter_b;
+}
+
+double data_t::get_parameter_xi()
+{
+	return this->parameter_xi;
+}
+
+double data_t::get_parameter_psi()
+{
+	return this->parameter_psi;
+}
+
+double data_t::get_parameter_lambda()
+{
+	return this->parameter_lambda;
+}
+
+unsigned int data_t::get_parameter_kappa()
+{
+	return this->parameter_kappa;
+}
+
+unsigned int data_t::get_parameter_L()
+{
+	return this->parameter_L;
 }

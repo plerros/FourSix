@@ -24,7 +24,6 @@ boost::json::value data_out::get_jsonvalue()
 {
 	boost::json::value ret;
 
-
 	ret = {{"content_type", this->content_type}};
 	ret.as_object().emplace("instance_uid", this->instance_uid);
 
