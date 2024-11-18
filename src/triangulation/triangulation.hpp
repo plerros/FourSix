@@ -35,7 +35,6 @@ class triangulation_t
 		data_t *data;
 		int progression_check;
 		std::vector<int> history;
-		int method_performance[st_end];
 		std::array<std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>>, st_end> *tried;
 
 		void update_outside_obtuse();
