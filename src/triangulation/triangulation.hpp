@@ -56,7 +56,7 @@ class triangulation_t
 		std::vector<std::pair<size_t, size_t>> get_edges();
 
 		// Steiner operations
-		void steiner_centroid(std::vector<CDT::Point> *steiner_pts);
+		void steiner_centroid(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *steiner_pts);
 		void steiner_circumcenter(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions);
 		void steiner_polygon_centroid(std::vector<CDT::Point> *steiner_pts);
 

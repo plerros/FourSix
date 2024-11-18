@@ -222,7 +222,8 @@ static inline bool detect_nottried(
 
 // Steiner methods
 
-void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
+void triangulation_t::steiner_centroid(
+	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
 {
 	const int method = st_centroid;
 
@@ -234,8 +235,10 @@ void triangulation_t::steiner_centroid(std::vector<CDT::Point> *steiner_pts)
 		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
-		CDT::Point steiner = CGAL::centroid(triangle);
-		steiner_pts->push_back(steiner);
+		std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+		solution.first = triangle;
+		solution.second.push_back(CGAL::centroid(triangle));
+		solutions->push_back(solution);
 	}
 }
 
@@ -619,7 +622,7 @@ void triangulation_t::steiner_add(const int method, size_t max)
 	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> solutions;
 	switch (method){
 		case st_centroid:
-			this->steiner_centroid(&steiner_pts);
+			this->steiner_centroid(&solutions);
 			break;
 		case st_circumcenter:
 			this->steiner_circumcenter(&solutions);
