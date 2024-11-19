@@ -47,29 +47,30 @@ int main(int argc, char** argv) {
 
 		//steiner_mixed(&triangulation, &data, 5);
 
-		for (int i = 0; i < data.get_optim_methods().size(); i++) {
-			switch (data.get_optim_methods()[i]) {
+		auto parameters = data.get_alg();
+		for (auto it =parameters.begin(); it != parameters.end(); it++) {
+			switch (it->method) {
 				case om_my: {
-					unsigned int depth = triangulation.size_obtuse() / 3;
-					if (triangulation.size_obtuse() > 0 && depth < 5)
-						depth = 5;
+					it->L = triangulation.size_obtuse() / 3;
+					if (triangulation.size_obtuse() > 0 && it->L < 5)
+						it->L = 5;
 
-					triangulation.optim_mixed_recursive(depth);
+					triangulation.optim_mixed_recursive(it->L);
 					triangulation.set_progression_check(progression_less_equal);
-					triangulation.optim_mixed_recursive(depth);
+					triangulation.optim_mixed_recursive(it->L);
 					break;
 				}
 
 				case om_ls:
-					triangulation.optim_local_search();
+					triangulation.optim_local_search(*it);
 					break;
 
 				case om_sa:
-					triangulation.optim_simulated_annealing();
+					triangulation.optim_simulated_annealing(*it);
 					break;
 
 				case om_ant:
-					triangulation.optim_ant_colony();
+					triangulation.optim_ant_colony(*it);
 					break;
 
 				default:

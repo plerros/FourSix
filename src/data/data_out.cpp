@@ -18,6 +18,7 @@ data_out::data_out(data_t *data, triangulation_t *triangulation)
 		this->steiner_points_y.push_back(it->second);
 	}
 	this->edges = triangulation->get_edges();
+	this->obtuse_count = triangulation->size_obtuse();
 }
 
 boost::json::value data_out::get_jsonvalue()
@@ -49,6 +50,8 @@ boost::json::value data_out::get_jsonvalue()
 		}
 		ret.as_object().emplace("edges", arr);
 	}
+
+	ret.as_object().emplace("obtuse_count", this->obtuse_count);
 
 	return ret;
 }

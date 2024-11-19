@@ -75,7 +75,7 @@ class triangulation_t
 
 		// Optimization Methods
 		void optim_mixed_recursive(const unsigned int depth); // My initial attempt
-		void optim_local_search();
-		void optim_simulated_annealing();
-		void optim_ant_colony();
+		void optim_local_search(optim_alg_t parameters);
+		void optim_simulated_annealing(optim_alg_t parameters);
+		void optim_ant_colony(optim_alg_t parameters);
 };

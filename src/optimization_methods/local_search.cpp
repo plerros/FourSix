@@ -1,9 +1,9 @@
 #include "helper.hpp"
 #include "triangulation.hpp"
 
-void triangulation_t::optim_local_search()
+void triangulation_t::optim_local_search(optim_alg_t parameters)
 {
-	const unsigned int depth = this->data->get_parameter_L();
+	const unsigned int depth = parameters.L;
 
 	for (unsigned int i = 0; i < depth && this->obtuse > 0; i++) {
 		if (PRINT_PROGRESS) {

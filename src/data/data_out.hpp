@@ -11,6 +11,7 @@ class data_out
 		std::vector<std::string> steiner_points_x;
 		std::vector<std::string> steiner_points_y;
 		std::vector<std::pair<size_t, size_t>> edges;
+		size_t obtuse_count;
 
 	public:
 		data_out(data_t *data, triangulation_t *triangulation);

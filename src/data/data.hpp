@@ -8,7 +8,21 @@ enum optim_method_enum{
 	om_my,
 	om_ls,
 	om_sa,
-	om_ant};
+	om_ant
+};
+
+class optim_alg_t {
+	public:
+		int method;
+
+		double a;
+		double b;
+		double xi;
+		double psi;
+		double lambda;
+		unsigned int kappa;
+		unsigned int L;
+};
 
 class data_t
 {
@@ -25,15 +39,7 @@ class data_t
 
 		CGAL::Polygon_2<K> boundary_pgn;
 
-		std::vector<int> optim_methods;
-
-		double parameter_a;
-		double parameter_b;
-		double parameter_xi;
-		double parameter_psi;
-		double parameter_lambda;
-		unsigned int parameter_kappa;
-		unsigned int parameter_L;
+		std::vector<optim_alg_t> alg;
 
 	public:
 		data_t(data_in d);
@@ -50,14 +56,5 @@ class data_t
 
 		void final_triangulation();
 
-		std::vector<int> get_optim_methods();
-		double get_parameter_a();
-		double get_parameter_b();
-		double get_parameter_xi();
-		double get_parameter_psi();
-		double get_parameter_lambda();
-		unsigned int get_parameter_kappa();
-		unsigned int get_parameter_L();
-
-		void set_parameter_L(unsigned int value);
+		std::vector<optim_alg_t> get_alg();
 };
