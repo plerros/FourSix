@@ -1,22 +1,17 @@
 #include "helper.hpp"
 #include "triangulation.hpp"
 
-/*
- * Local Search:
- *
- * Input
- * 	L == depth
- */
-
-void triangulation_t::optim_local_search(unsigned int depth)
+void triangulation_t::optim_local_search()
 {
-	for (; depth > 0 && this->obtuse > 0; depth--) {
-		if (PRINT_RECURSION_TREE) {
+	const unsigned int depth = this->data->get_parameter_L();
+
+	for (unsigned int i = 0; i < depth && this->obtuse > 0; i++) {
+		if (PRINT_PROGRESS) {
 			std::cout << this->obtuse << " \t| ";
 			std::cout << this->steiner << " \t| ";
 			if (this->progression_check == progression_less_equal)
 				std::cout << ".";
-			std::cout << depth << std::endl;
+			std::cout << i << std::endl;
 		}
 		triangulation_t best = *this;
 		for (int method = st_start + 1; method < st_end; method++) {

@@ -70,15 +70,13 @@ skip_region_boundary:
 	}
 skip_additional_constraints:
 
-	this->optim_method = optim_none;
+	this->optim_method = "";
 	if (root.if_contains("method")) {
 		auto tmp = jv.at("method").as_string();
-		if (tmp == "ls")
-			this->optim_method = optim_local_search;
-		if (tmp == "sa")
-			this->optim_method = optim_simulated_annealing;
-		if (tmp == "ant")
-			this->optim_method = optim_ant_colony;
+		assert(tmp == "ls"
+			|| tmp == "sa"
+			|| tmp == "ant");
+		this->optim_method = tmp;
 	}
 
 	this->delauney = false;
@@ -160,7 +158,7 @@ std::vector<std::pair<std::int64_t, std::int64_t>> data_in::get_points()
 	return this->points;
 }
 
-std::vector<size_t>  data_in::get_boundary()
+std::vector<size_t> data_in::get_boundary()
 {
 	return this->region_boundary;
 }
@@ -170,7 +168,7 @@ std::vector<std::pair<size_t, size_t>> data_in::get_constraints()
 	return this->constraints;
 }
 
-int data_in::get_optim_method()
+std::string data_in::get_optim_method()
 {
 	return this->optim_method;
 }

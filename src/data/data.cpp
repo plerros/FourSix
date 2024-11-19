@@ -86,10 +86,14 @@ data_t::data_t(data_in d)
 		this->constraint_mid_pts.push_back(CGAL::midpoint(it->first, it->second));
 
 	if (!d.get_delauney())
-		this->optim_methods.push_back(optim_mixed_recursive);
+		this->optim_methods.push_back(om_my);
 	
-	if (d.get_optim_method() != optim_none)
-		this->optim_methods.push_back(d.get_optim_method());
+	if (d.get_optim_method() == "ls")
+		this->optim_methods.push_back(om_ls);
+	if (d.get_optim_method() == "sa")
+		this->optim_methods.push_back(om_ls);
+	if (d.get_optim_method() == "ant")
+		this->optim_methods.push_back(om_ls);
 	
 	this->parameter_a      = d.get_parameter_a();
 	this->parameter_b      = d.get_parameter_b();
@@ -187,4 +191,9 @@ unsigned int data_t::get_parameter_kappa()
 unsigned int data_t::get_parameter_L()
 {
 	return this->parameter_L;
+}
+
+void data_t::set_parameter_L(unsigned int value)
+{
+	this->parameter_L = value;
 }

@@ -3,7 +3,12 @@
 #include "configuration.hpp"
 #include "data_in.hpp"
 
-enum optim_method_enum{om_local, om_sa, om_ant};
+enum optim_method_enum{
+	om_none,
+	om_my,
+	om_ls,
+	om_sa,
+	om_ant};
 
 class data_t
 {
@@ -53,4 +58,6 @@ class data_t
 		double get_parameter_lambda();
 		unsigned int get_parameter_kappa();
 		unsigned int get_parameter_L();
+
+		void set_parameter_L(unsigned int value);
 };

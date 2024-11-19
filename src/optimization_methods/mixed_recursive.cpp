@@ -1,14 +1,14 @@
 #include "helper.hpp"
 #include "triangulation.hpp"
 
-void triangulation_t::optim_mixed_recursive(unsigned int depth)
+void triangulation_t::optim_mixed_recursive(const unsigned int depth)
 {
 	if (depth == 0)
 		return;
 	if (this->exit_early())
 		return;
 
-	if (PRINT_RECURSION_TREE) {
+	if (PRINT_PROGRESS) {
 		std::cout << this->obtuse << " \t| ";
 		std::cout << this->steiner << " \t|";
 		cout_space(depth);

@@ -46,39 +46,30 @@ int main(int argc, char** argv) {
 		auto t1 = std::chrono::high_resolution_clock::now();
 
 		//steiner_mixed(&triangulation, &data, 5);
-		unsigned int depth = triangulation.size_obtuse() / 3;
-		if (triangulation.size_obtuse() > 0 && depth < 5)
-			depth = 5;
 
 		for (int i = 0; i < data.get_optim_methods().size(); i++) {
 			switch (data.get_optim_methods()[i]) {
-				case optim_mixed_recursive:
+				case om_my: {
+					unsigned int depth = triangulation.size_obtuse() / 3;
+					if (triangulation.size_obtuse() > 0 && depth < 5)
+						depth = 5;
+
 					triangulation.optim_mixed_recursive(depth);
 					triangulation.set_progression_check(progression_less_equal);
 					triangulation.optim_mixed_recursive(depth);
 					break;
+				}
 
-				case optim_local_search:
-					triangulation.optim_local_search(
-						data.get_parameter_L());
+				case om_ls:
+					triangulation.optim_local_search();
 					break;
 
-				case optim_simulated_annealing:
-					triangulation.optim_simulated_annealing(
-						data.get_parameter_a(),
-						data.get_parameter_b(),
-						data.get_parameter_L());
+				case om_sa:
+					triangulation.optim_simulated_annealing();
 					break;
 
-				case optim_ant_colony:
-					triangulation.optim_ant_colony(
-						data.get_parameter_a(),
-						data.get_parameter_b(),
-						data.get_parameter_xi(),
-						data.get_parameter_psi(),
-						data.get_parameter_lambda(),
-						data.get_parameter_kappa(),
-						data.get_parameter_L());
+				case om_ant:
+					triangulation.optim_ant_colony();
 					break;
 
 				default:
@@ -103,7 +94,7 @@ int main(int argc, char** argv) {
 
 			if (argc == 5) {
 				std::ofstream outfile;
-				outfile.open(argv[5]);
+				outfile.open(argv[4]);
 				pretty_print(outfile, output.get_jsonvalue());
 				outfile.close();
 			} else {

@@ -10,7 +10,7 @@ class data_in
 		std::vector<size_t> region_boundary;
 		std::vector<std::pair<size_t, size_t>> constraints;
 
-		int optim_method;
+		std::string optim_method;
 
 		/*
 		 * delauney:
@@ -35,7 +35,7 @@ class data_in
 		std::vector<size_t>  get_boundary();
 		std::vector<std::pair<size_t, size_t>> get_constraints();
 
-		int get_optim_method();
+		std::string get_optim_method();
 		bool get_delauney();
 		double get_parameter_a();
 		double get_parameter_b();
