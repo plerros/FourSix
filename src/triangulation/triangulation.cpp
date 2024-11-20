@@ -430,7 +430,7 @@ void triangulation_t::steiner_projection_internal(
 			
 			angle_type[i] = CGAL::angle(-edge[i], edge[j]);
 
-			if (angle_type[i] != CGAL::OBTUSE)
+			if (is_obtuse(triangle) && angle_type[i] != CGAL::OBTUSE)
 				continue;
 
 			CGAL::Line_2<K> l(triangle.vertex(i), triangle.vertex(k));
