@@ -22,6 +22,8 @@ enum steiner_method_enum {
 	st_constraint_random,
 	st_neighbor_random,
 	st_end,
+	st_projection,
+	st_projection_outward_all,
 	st_unused
 };
 

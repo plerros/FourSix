@@ -386,8 +386,10 @@ void triangulation_t::steiner_projection_internal(
 	const int method)
 {
 	assert (
-		method == st_projection_all
+		method == st_projection
+		|| method == st_projection_all
 		|| method == st_projection_outward
+		|| method == st_projection_outward_all
 		|| method == st_unused
 	);
 
@@ -503,7 +505,7 @@ void triangulation_t::steiner_projection_outward(
 {
 	int method = st_projection_outward;
 	if (solutions == NULL)
-		method = st_unused;
+		method = st_projection_outward_all;
 
 	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local;
 	steiner_projection_internal(NULL, &local, method);
@@ -528,7 +530,7 @@ void triangulation_t::steiner_projection_outward(
 void triangulation_t::steiner_projection(
 	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions)
 {
-	int method = st_projection_all;
+	int method = st_projection;
 	if (solutions == NULL)
 		method = st_projection_all;
 
@@ -668,6 +670,17 @@ void triangulation_t::steiner_add(const int method, size_t max)
 			break;
 		case st_projection_outward:
 			this->steiner_projection_outward(&solutions);
+			break;
+		case st_projection_outward_all:
+			if (max == SIZE_MAX) {
+				this->steiner_projection_outward(NULL);
+			}
+			else {
+				this->steiner_projection_outward(&solutions);
+			}
+			break;
+		case st_projection:
+			this->steiner_projection(&solutions);
 			break;
 		case st_projection_all:
 			if (max == SIZE_MAX) {
