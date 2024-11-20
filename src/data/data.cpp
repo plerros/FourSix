@@ -97,7 +97,6 @@ data_t::data_t(data_in d)
 	if (!d.get_delauney()) {
 		auto tmp = default_val;
 		tmp.method = om_my;
-		std::cout << om_my << std::endl;
 		this->alg.push_back(tmp);
 	}
 
