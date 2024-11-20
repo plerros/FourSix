@@ -432,10 +432,10 @@ void triangulation_t::steiner_projection_internal(
 			
 			// Sort to inward / outward
 			K::Segment_2 closest_segment1 = boundary_segments[0];
-			auto distance1 = CGAL::squared_distance(triangle.vertex(i), closest_segment1);
+			auto distance1 = CGAL::squared_distance(triangle.vertex(j), closest_segment1);
 
 			for (auto it = boundary_segments.begin(); it < boundary_segments.end(); it++) {
-				auto tmp = CGAL::squared_distance(triangle.vertex(i), *it);
+				auto tmp = CGAL::squared_distance(triangle.vertex(j), *it);
 				if (tmp < distance1) {
 					closest_segment1 = *it;
 					distance1 = tmp;
@@ -489,7 +489,7 @@ void triangulation_t::steiner_projection_inward(
 	}
 
 	for (size_t i = 0; i < local.size(); i++) {
-		for (size_t j = 0; j < local.size(); j++) {
+		for (size_t j = 0; j < local[i].second.size(); j++) {
 			this->insert(local[i].second[j], method);
 			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
@@ -516,7 +516,7 @@ void triangulation_t::steiner_projection_outward(
 	}
 
 	for (size_t i = 0; i < local.size(); i++) {
-		for (size_t j = 0; j < local.size(); j++) {
+		for (size_t j = 0; j < local[i].second.size(); j++) {
 			this->insert(local[i].second[j], method);
 			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
