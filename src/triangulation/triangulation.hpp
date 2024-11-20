@@ -1,6 +1,6 @@
 #pragma once
 
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 #include "data.hpp"
 
 enum progression_check_enum{progression_less, progression_less_equal};

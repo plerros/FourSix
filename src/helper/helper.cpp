@@ -1,4 +1,4 @@
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 
 #include "helper.hpp"
 

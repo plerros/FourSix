@@ -1,6 +1,6 @@
 #pragma once
 
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 #include "data_in.hpp"
 
 enum optim_method_enum{

@@ -1,7 +1,7 @@
 #include <boost/json.hpp>
 #include <iostream>
 
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 
 #include <CGAL/Quotient.h>
 #include <CGAL/Polygon_2.h>

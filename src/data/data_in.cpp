@@ -1,7 +1,7 @@
 #include <boost/json.hpp>
 #include <iostream>
 
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 #include "data_in.hpp"
 
 data_in::data_in(boost::json::value const& jv)

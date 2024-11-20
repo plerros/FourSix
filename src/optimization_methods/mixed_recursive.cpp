@@ -1,3 +1,5 @@
+#include "configuration.hpp"
+
 #include "helper.hpp"
 #include "triangulation.hpp"
 

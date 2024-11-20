@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "configuration.hpp"
+#include "config_cgal.hpp"
 
 #include "json.hpp"
 #include "data_in.hpp"

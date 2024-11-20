@@ -1,4 +1,4 @@
-#include "configuration.hpp"
+#include "config_cgal.hpp"
 
 #include <CGAL/centroid.h>
 #include <CGAL/draw_polygon_2.h> 

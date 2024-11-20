@@ -3,6 +3,7 @@
 #include <limits>
 
 #include "configuration.hpp"
+#include "config_cgal.hpp"
 
 #include <CGAL/intersections.h>
 #include <CGAL/squared_distance_2.h>
