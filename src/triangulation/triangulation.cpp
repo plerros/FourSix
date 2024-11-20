@@ -437,43 +437,41 @@ void triangulation_t::steiner_projection_internal(
 			CDT::Point steiner = l.projection(triangle.vertex(j));
 			
 			// Sort to inward / outward
-			K::Segment_2 closest_segment1 = boundary_segments[0];
-			auto distance1 = CGAL::squared_distance(triangle.vertex(j), closest_segment1);
+			K::Segment_2 closest_segment_src = boundary_segments[0];
+			auto distance_src = CGAL::squared_distance(triangle.vertex(j), closest_segment_src);
 
 			for (auto it = boundary_segments.begin(); it < boundary_segments.end(); it++) {
 				auto tmp = CGAL::squared_distance(triangle.vertex(j), *it);
-				if (tmp < distance1) {
-					closest_segment1 = *it;
-					distance1 = tmp;
+				if (tmp < distance_src) {
+					closest_segment_src = *it;
+					distance_src = tmp;
 				}
 			}
 			
-			K::Segment_2 closest_segment2 = boundary_segments[0];
-			auto distance2 = CGAL::squared_distance(steiner, closest_segment2);
+			K::Segment_2 closest_segment_dst = boundary_segments[0];
+			auto distance_dst = CGAL::squared_distance(steiner, closest_segment_dst);
 			for (auto it = boundary_segments.begin(); it < boundary_segments.end(); it++) {
 				auto tmp = CGAL::squared_distance(steiner, *it);
-				if (tmp < distance2) {
-					closest_segment2 = *it;
-					distance2 = tmp;
+				if (tmp < distance_dst) {
+					closest_segment_dst = *it;
+					distance_dst = tmp;
 				}
 			}
 
-			if (
-				distance1 < distance2
-				&& distance1 != 0
-			) {
-				if (inward != NULL) {
-					std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
-					solution.first = triangle;
-					solution.second.push_back(steiner);
-					inward->push_back(solution);
-				}
-			} else {
+			if (distance_src > distance_dst || distance_dst == 0) {
 				if (outward != NULL) {
 					std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
 					solution.first = triangle;
 					solution.second.push_back(steiner);
 					outward->push_back(solution);
+				}
+			}
+			else {
+				if (inward != NULL) {
+					std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
+					solution.first = triangle;
+					solution.second.push_back(steiner);
+					inward->push_back(solution);
 				}
 			}
 			break;
@@ -515,7 +513,7 @@ void triangulation_t::steiner_projection_outward(
 
 	std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> local;
 	steiner_projection_internal(NULL, &local, method);
-	
+
 	if (solutions != NULL) {
 		solutions->insert(solutions->end(), local.begin(), local.end());
 		local.clear();
