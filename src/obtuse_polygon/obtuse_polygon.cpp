@@ -24,6 +24,8 @@ void obtuse_polygon_t::recompute_boundary()
 {
 	this->boundary.clear();
 
+	if (this->sequence.size() == 0)
+		return;
 
 	if (this->sequence.size() == 1) {
 		K::Triangle_2 triangle = this->sequence[0];
@@ -38,18 +40,19 @@ void obtuse_polygon_t::recompute_boundary()
 
 	K::Triangle_2 *prev = NULL;
 	K::Triangle_2 prev2;
-	while (this->sequence.size() != 0) {
-		K::Triangle_2 triangle = this->sequence.back();
-		this->sequence.pop_back();
+	auto sequence = this->sequence;
+	while (sequence.size() != 0) {
+		K::Triangle_2 triangle = sequence.back();
+		sequence.pop_back();
 
 		if (prev == NULL) {
 			// first loop
 			std::pair<size_t, size_t> to_next(0, 1);
 
 			for (;to_next.first < 3; to_next.first++, to_next.second = (to_next.first + 1) % 3)  {
-				if (!is_in_triangle(this->sequence.back(), triangle.vertex(to_next.first)))
+				if (!is_in_triangle(sequence.back(), triangle.vertex(to_next.first)))
 					continue;
-				if (!is_in_triangle(this->sequence.back(), triangle.vertex(to_next.second)))
+				if (!is_in_triangle(sequence.back(), triangle.vertex(to_next.second)))
 					continue;
 				break;
 			}
@@ -61,15 +64,15 @@ void obtuse_polygon_t::recompute_boundary()
 			ClockWise.push_back(triangle.vertex(to_next.second));
 			prev = &prev2;
 
-		} else if (this->sequence.size() > 0) {
+		} else if (sequence.size() > 0) {
 			// center of the sequence
 			std::pair<size_t, size_t> to_next(0,1);
 			std::pair<size_t, size_t> to_prev(0,1);
 
 			for (;to_next.first < 3; to_next.first++, to_next.second = (to_next.first + 1) % 3)  {
-				if (!is_in_triangle(this->sequence.back(), triangle.vertex(to_next.first)))
+				if (!is_in_triangle(sequence.back(), triangle.vertex(to_next.first)))
 					continue;
-				if (!is_in_triangle(this->sequence.back(), triangle.vertex(to_next.second)))
+				if (!is_in_triangle(sequence.back(), triangle.vertex(to_next.second)))
 					continue;
 				break;
 			}
@@ -163,6 +166,7 @@ void obtuse_polygon_t::draw()
 
 CDT::Point obtuse_polygon_t::get_steiner()
 {
+	assert(this->sequence.size() != 0);
 	if (! this->boundary_valid)
 		this->recompute_boundary();
 	

@@ -294,6 +294,7 @@ void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_
 	std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>> visited;
 
 	while (1) {
+		std::vector<CDT::Point> current_steiner_pts;
 		obtuse_polygon_t obtuse_polygon(this->data);
 		// Initialize first element
 		for (auto it = this->cdt.finite_faces_begin(); it != this->cdt.finite_faces_end(); it++) {
@@ -344,6 +345,8 @@ void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_
 				if(!obtuse_polygon.try_insert(triangle))
 					continue;
 
+				CDT::Point steiner_pt = obtuse_polygon.get_steiner();
+				current_steiner_pts.push_back(steiner_pt);
 				visited.insert(triangle_to_tuple(triangle));
 
 				std::vector<K::Triangle_2> obtuse_neighbors;
@@ -376,7 +379,10 @@ void triangulation_t::steiner_polygon_centroid(std::vector<CDT::Point> *steiner_
 		}
 
 		CDT::Point steiner_pt = obtuse_polygon.get_steiner();
-		steiner_pts->push_back(steiner_pt);
+		current_steiner_pts.push_back(steiner_pt);
+
+		std::reverse(current_steiner_pts.begin(), current_steiner_pts.end());
+		steiner_pts->insert(steiner_pts->end(), current_steiner_pts.begin(), current_steiner_pts.end());
 	}
 }
 
