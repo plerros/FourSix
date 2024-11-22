@@ -14,9 +14,6 @@ obtuse_polygon_t::obtuse_polygon_t(data_t *data)
 {
 	this->data = data;
 	this->boundary_valid = false;
-
-	//K traits = K();
-	//this->polygon(traits);
 	this->polygon_valid = false;
 };
 

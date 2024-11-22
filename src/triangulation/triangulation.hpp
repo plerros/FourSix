@@ -5,14 +5,21 @@
 
 enum progression_check_enum{progression_less, progression_less_equal};
 
-/*
- * To iterate, start from st_start+1 and end at st_end
- *
- * Values outside that range shouldn't be iterated over.
- */
-
 enum steiner_method_enum {
-	st_start,
+	st_centroid,
+	st_circumcenter,
+	st_midpoint,
+	st_projection,
+	st_projection_outward,
+	st_projection_all,
+	st_projection_outward_all,
+	st_polygon_centroid,
+	st_constraint_random,
+	st_neighbor_random,
+	st_end,
+	st_unused
+};
+const std::array st_active = {
 	st_circumcenter,
 	st_projection_outward,
 	st_projection_all,
@@ -20,11 +27,7 @@ enum steiner_method_enum {
 	st_polygon_centroid,
 	st_centroid,
 	st_constraint_random,
-	st_neighbor_random,
-	st_end,
-	st_projection,
-	st_projection_outward_all,
-	st_unused
+	st_neighbor_random
 };
 
 class triangulation_t

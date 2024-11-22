@@ -11,6 +11,8 @@ set(CMAKE_CXX_FLAGS_MINSIZEREL "-Os" CACHE STRING "Flags used by the compiler du
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-O2 -g" CACHE STRING "Flags used by the compiler during release builds." FORCE)
 
+set(CMAKE_BUILD_PARALLEL_LEVEL $(nproc))
+
 project(FourSix)
 
 find_package(CGAL REQUIRED OPTIONAL_COMPONENTS Qt5)

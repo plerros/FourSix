@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-find $SCRIPT_DIR -type f -name '*.json' | sort -V > findjson.tmp
+find "$SCRIPT_DIR" -type f -name '*.json' | sort -V > findjson.tmp
 
 rm -f results.md
 
@@ -21,6 +21,6 @@ while read filename; do
 	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms |" >> results.md
 	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms |"
 	rm "$resultname"
-done <findjson.tmp
+done < findjson.tmp
 
 rm findjson.tmp

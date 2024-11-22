@@ -132,7 +132,6 @@ void triangulation_t::insert(CDT::Point steiner, int method)
 
 		this->cdt.insert(steiner);
 		if (this->data->on_boundary(steiner)) {
-			//this->obtuse = count_obtuse(&(this->cdt), this->data);
 			this->update_outside_obtuse();
 			this->obtuse = count_all_obtuse(&(this->cdt), this->data) - this->outside_obtuse;
 
@@ -574,7 +573,6 @@ void triangulation_t::steiner_constraint_random(std::vector<CDT::Point> *steiner
 		if (length / 10 > 100)
 			amount = length / 10;
 
-		//std::cout << amount << std::endl;
 		std::copy_n(generator, 100, std::back_inserter(*steiner_pts));
 	}
 }

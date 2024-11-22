@@ -16,7 +16,8 @@ void triangulation_t::optim_local_search(optim_alg_t parameters)
 			std::cerr << i << std::endl;
 		}
 		triangulation_t best = *this;
-		for (int method = st_start + 1; method < st_end; method++) {
+		for (int j = 0; i < st_active.size(); j++) {
+			int method = st_active[j];
 			// prevent projection_all from running after projection.
 			if (method == st_projection_all
 				&& this->history.size() > 0

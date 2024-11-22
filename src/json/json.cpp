@@ -99,7 +99,6 @@ void pretty_print (
 				auto const& arr = jv.get_array();
 				if (! arr.empty()) {
 					auto it = arr.begin();
-					//os << *indent;
 					for (;;) {
 						os << *indent;
 						pretty_print(os, *it, indent);

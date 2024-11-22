@@ -22,7 +22,8 @@ void triangulation_t::optim_mixed_recursive(const unsigned int depth)
 	triangulation_t best = *this;
 	triangulation_t current = *this;
 
-	for (int method = st_start + 1; method < st_end; method++) {
+	for (int i = 0; i < st_active.size(); i++) {
+		int method = st_active[i];
 		//if (this->history.size() > 0 && this->history.back() == method)
 		//	continue;
 
@@ -52,8 +53,6 @@ void triangulation_t::optim_mixed_recursive(const unsigned int depth)
 		if (!skip_flag)
 			current.steiner_add(method);
 
-		//this->tried = current.tried;
-
 		if (this->progression_check == progression_less
 			&& (current.obtuse < best.obtuse))
 			best = current;
@@ -79,7 +78,5 @@ void triangulation_t::optim_mixed_recursive(const unsigned int depth)
 				break;
 		}
 	}
-	//best.tried = this->tried;
-
 	*this = best;
 }

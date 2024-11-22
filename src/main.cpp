@@ -30,23 +30,14 @@ int main(int argc, char** argv) {
 		// Parse the file as JSON
 		auto const jv = parse_file(argv[2]);
 
-		// Now pretty-print the value
-		//pretty_print(std::cout, jv);
-
 		data_in input{jv};
-		//input.print();
 
 		data_t data{input};
 		triangulation_t triangulation(&data);
 		std::cout << "Input Obtuse: " << triangulation.size_obtuse() << std::endl;
-
-		//CGAL::make_conforming_Delaunay_2(cdt);
-		//CGAL::make_conforming_Gabriel_2(cdt);
 		
 		// Runtime start
 		auto t1 = std::chrono::high_resolution_clock::now();
-
-		//steiner_mixed(&triangulation, &data, 5);
 
 		auto parameters = data.get_alg();
 		for (auto it =parameters.begin(); it != parameters.end(); it++) {
