@@ -62,7 +62,7 @@ static void print_st_method(int method)
 	name[st_constraint_random] = "constraint";
 
 	if (method < st_end)
-		std::cout << name[method] << std::endl;
+		std::cerr << name[method] << std::endl;
 	#endif
 }
 

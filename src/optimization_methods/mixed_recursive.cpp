@@ -11,12 +11,12 @@ void triangulation_t::optim_mixed_recursive(const unsigned int depth)
 		return;
 
 	if (PRINT_PROGRESS) {
-		std::cout << this->obtuse << " \t| ";
-		std::cout << this->steiner << " \t|";
+		std::cerr << this->obtuse << " \t| ";
+		std::cerr << this->steiner << " \t|";
 		cout_space(depth);
 		if (this->progression_check == progression_less_equal)
-			std::cout << ".";
-		std::cout << depth << std::endl;
+			std::cerr << ".";
+		std::cerr << depth << std::endl;
 	}
 	
 	triangulation_t best = *this;

@@ -9,11 +9,11 @@ void triangulation_t::optim_local_search(optim_alg_t parameters)
 
 	for (unsigned int i = 0; i < depth && this->obtuse > 0; i++) {
 		if (PRINT_PROGRESS) {
-			std::cout << this->obtuse << " \t| ";
-			std::cout << this->steiner << " \t| ";
+			std::cerr << this->obtuse << " \t| ";
+			std::cerr << this->steiner << " \t| ";
 			if (this->progression_check == progression_less_equal)
-				std::cout << ".";
-			std::cout << i << std::endl;
+				std::cerr << ".";
+			std::cerr << i << std::endl;
 		}
 		triangulation_t best = *this;
 		for (int method = st_start + 1; method < st_end; method++) {

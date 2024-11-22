@@ -83,8 +83,7 @@ int main(int argc, char** argv) {
 		auto t2 = std::chrono::high_resolution_clock::now();
 		auto ms_int = std::chrono::duration_cast<std::chrono::milliseconds>(t2 - t1);
 		std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-		std::cout << ms_int.count() << "ms" << std::endl;
-		std::cout << ms_double.count() << "ms" << std::endl;
+		std::cout << "ms " << ms_int.count() << std::endl;
 
 		std::cout << "obtuse " << triangulation.size_obtuse() << std::endl;
 		std::cout << "steiner " << triangulation.size_steiner() << std::endl;
