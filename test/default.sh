@@ -2,7 +2,7 @@
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-find "$SCRIPT_DIR" -type f -name '*.json' | sort -V > findjson.tmp
+find "$SCRIPT_DIR/default/" -type f -name '*.json' | sort -V > findjson.tmp
 
 rm -f results.md
 
