@@ -94,7 +94,7 @@ data_t::data_t(data_in d)
 	default_val.kappa = 0;
 	default_val.L = 0;
 
-	if (!d.get_delauney()) {
+	if (!d.get_delaunay()) {
 		auto tmp = default_val;
 		tmp.method = om_my;
 		this->alg.push_back(tmp);

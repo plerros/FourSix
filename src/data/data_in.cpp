@@ -79,10 +79,10 @@ skip_additional_constraints:
 		this->optim_method = tmp;
 	}
 
-	this->delauney = false;
-	if (root.if_contains("delauney")) {
-		auto tmp = jv.at("delauney").as_bool();
-		this->delauney=tmp;
+	this->delaunay = false;
+	if (root.if_contains("delaunay")) {
+		auto tmp = jv.at("delaunay").as_bool();
+		this->delaunay=tmp;
 	}
 
 	this->parameter_a      = 1.0;
@@ -173,9 +173,9 @@ std::string data_in::get_optim_method()
 	return this->optim_method;
 }
 
-bool data_in::get_delauney()
+bool data_in::get_delaunay()
 {
-	return this->delauney;
+	return this->delaunay;
 }
 
 double data_in::get_parameter_a()

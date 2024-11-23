@@ -13,11 +13,11 @@ class data_in
 		std::string optim_method;
 
 		/*
-		 * delauney:
-		 * True  == Start from delauney
+		 * delaunay:
+		 * True  == Start from delaunay
 		 * False == Start from my own triangulation
 		 */
-		bool delauney;
+		bool delaunay;
 
 		double parameter_a;
 		double parameter_b;
@@ -36,7 +36,7 @@ class data_in
 		std::vector<std::pair<size_t, size_t>> get_constraints();
 
 		std::string get_optim_method();
-		bool get_delauney();
+		bool get_delaunay();
 		double get_parameter_a();
 		double get_parameter_b();
 		double get_parameter_xi();
