@@ -43,6 +43,7 @@ class data_t
 
 	public:
 		data_t(data_in d);
+		data_t(K::Triangle_2 triangle, optim_alg_t alg);
 		void print();
 		std::string get_instance_uid();
 		std::vector<CDT::Point> get_points();

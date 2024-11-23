@@ -61,6 +61,8 @@ class triangulation_t
 		std::vector<std::pair<std::string, std::string>> get_steiner_str();
 		std::vector<std::pair<size_t, size_t>> get_edges();
 
+		double get_energy(optim_alg_t parameters);
+
 		// Steiner operations
 		void steiner_centroid(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *steiner_pts);
 		void steiner_circumcenter(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions);

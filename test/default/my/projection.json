@@ -1,0 +1,11 @@
+{
+	"instance_uid": "projection",
+	"num_points": 8,
+	"points_x": [0, 0,   10000, 20000, 20000, 10000, 2000  , 18000],
+	"points_y": [0, 1000, 1000,   1000,   0,     0,  500 ,   500],
+	"region_boundary": [0, 1, 2, 3, 4, 5],
+	"num_constraints": 1,
+	"additional_constraints": [
+		[6,7]
+	]
+}

@@ -13,6 +13,7 @@
 #include "triangulation.hpp"
 
 int main(int argc, char** argv) {
+	std::srand(std::time(nullptr));
 	if (argc != 3 && argc != 5) {
 		std::cerr << "Usage: FourSix -i <input json>" << std::endl;
 		std::cerr << "       FourSix -i <input json> -o <output json>" << std::endl;

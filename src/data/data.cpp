@@ -128,6 +128,26 @@ data_t::data_t(data_in d)
 	}
 }
 
+data_t::data_t(K::Triangle_2 triangle, optim_alg_t alg)
+{
+	this->instance_uid = "dummy_uid";
+
+	for (int i = 0; i < 3; i++) {
+		this->boundary_pts.push_back(triangle.vertex(i));
+
+		int j = (i+1) % 3;
+		std::pair<CDT::Point, CDT::Point> edge;
+		edge.first = triangle.vertex(i);
+		edge.second = triangle.vertex(j);
+		this->boundary.push_back(edge);
+
+		this->boundary_segments.push_back(K::Segment_2(edge.first, edge.second));
+		this->boundary_pgn.push_back(edge.first);
+	}
+
+	this->alg.push_back(alg);
+}
+
 void data_t::print()
 {
 }

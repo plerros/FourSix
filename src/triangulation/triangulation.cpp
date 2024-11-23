@@ -842,3 +842,9 @@ std::vector<std::pair<size_t, size_t>> triangulation_t::get_edges()
 	}
 	return ret;
 }
+
+double triangulation_t::get_energy(optim_alg_t parameters)
+{
+	auto alg = this->data->get_alg();
+	return (parameters.a * ((double) this->obtuse) + parameters.b * ((double) this->steiner));
+}
