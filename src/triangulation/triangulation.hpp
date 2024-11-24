@@ -78,7 +78,8 @@ class triangulation_t
 		void steiner_neighbor_random(std::vector<std::pair<K::Triangle_2, std::vector<CDT::Point>>> *solutions);
 
 		void steiner_add(int method);
-		void steiner_add(int method, size_t max); // Add up to [max] steiner points using [method]
+		void steiner_add(int method, bool randomize);
+		void steiner_add(int method, bool randomize, size_t max); // Add up to [max] steiner points using [method]
 
 		// Optimization Methods
 		void optim_mixed_recursive(const unsigned int depth); // My initial attempt

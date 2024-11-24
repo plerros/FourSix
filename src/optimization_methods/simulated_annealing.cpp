@@ -22,6 +22,10 @@ void triangulation_t::optim_simulated_annealing(optim_alg_t parameters)
 		int method = st_sannealing[std::rand() % st_sannealing.size()];
 
 		triangulation_t current = *this;
+		/*
+		 * To randomly select a triangle and insert 1 steiner point:
+		 * current.steiner_add(method, true, 1);
+		 */
 		current.steiner_add(method);
 
 		double delta_energy = current.get_energy(parameters) - this->get_energy(parameters);

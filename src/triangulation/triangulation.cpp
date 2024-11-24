@@ -644,7 +644,7 @@ void triangulation_t::steiner_neighbor_random(
 	}
 }
 
-void triangulation_t::steiner_add(const int method, size_t max)
+void triangulation_t::steiner_add(const int method, bool randomize, size_t max)
 {
 	size_t amount = 0;
 	std::random_device rd;
@@ -696,7 +696,8 @@ void triangulation_t::steiner_add(const int method, size_t max)
 			// maybe error?
 			break;
 	}
-	//std::shuffle(steiner_pts.begin(), steiner_pts.end(), g);
+	if (randomize)
+		std::shuffle(steiner_pts.begin(), steiner_pts.end(), g);
 
 	for (size_t i = 0; i < steiner_pts.size(); i++) {
 		triangulation_t current = *this;
@@ -764,9 +765,14 @@ void triangulation_t::steiner_add(const int method, size_t max)
 		}
 	}
 }
+void triangulation_t::steiner_add(const int method, bool randomize)
+{
+	this->steiner_add(method, randomize, SIZE_MAX);
+}
+
 void triangulation_t::steiner_add(const int method)
 {
-	this->steiner_add(method, SIZE_MAX);
+	this->steiner_add(method, false, SIZE_MAX);
 }
 
 bool triangulation_t::exit_early()

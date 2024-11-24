@@ -26,7 +26,7 @@ void triangulation_t::optim_local_search(optim_alg_t parameters)
 			
 			triangulation_t current = *this;
 			// Add 1 steiner point on each step
-			current.steiner_add(method, 1);
+			current.steiner_add(method, false, 1);
 			if (this->progression_check == progression_less
 				&& (current.obtuse < best.obtuse))
 				best = current;
