@@ -8,5 +8,5 @@
 	"additional_constraints": [
 	],
 	"method": "sa",
-	"parameters": {"L": 200, "alpha":5.0, "beta":0.2, "xi": 1.0, "psi": 3.0, "labmda": 0.5, "kappa": 10}
+	"parameters": {"L": 10, "alpha":5.0, "beta":0.2, "xi": 1.0, "psi": 3.0, "labmda": 0.5, "kappa": 10}
 }
