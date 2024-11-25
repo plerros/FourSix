@@ -14,12 +14,27 @@
 
 int main(int argc, char** argv) {
 	std::srand(std::time(nullptr));
-	if (argc != 3 && argc != 5) {
+	char **inname = NULL;
+	char **outname = NULL;
+	if (argc == 3 && strcmp(argv[1], "-i") == 0) {
+		inname = &(argv[2]);
+	}
+
+	if (argc == 5 && strcmp(argv[1], "-i") == 0 && strcmp(argv[3], "-o") == 0) {
+		inname = &(argv[2]);
+		outname = &(argv[4]);
+	}
+	if (argc == 5 && strcmp(argv[1], "-o") == 0 && strcmp(argv[3], "-i") == 0) {
+		outname = &(argv[2]);
+		inname = &(argv[4]);
+	}
+
+	if (inname == NULL) {
 		std::cerr << "Usage: FourSix -i <input json>" << std::endl;
 		std::cerr << "       FourSix -i <input json> -o <output json>" << std::endl;
 		return EXIT_FAILURE;
 	}
-	if (argc == 5 && OUTPUT_TRIANGULATION == false) {
+	if (outname != NULL && OUTPUT_TRIANGULATION == false) {
 		std::cerr << "Usage: FourSix -i <input json>" << std::endl;
 		std::cout << std::endl;
 		std::cout << "Unavailable with current configuration.h:" << std::endl;
@@ -29,7 +44,7 @@ int main(int argc, char** argv) {
 
 	try {
 		// Parse the file as JSON
-		auto const jv = parse_file(argv[2]);
+		auto const jv = parse_file(*inname);
 
 		data_in input{jv};
 
@@ -85,9 +100,9 @@ int main(int argc, char** argv) {
 
 			CGAL::draw(triangulation.get_cdt());
 
-			if (argc == 5) {
+			if (outname != NULL) {
 				std::ofstream outfile;
-				outfile.open(argv[4]);
+				outfile.open(*outname);
 				pretty_print(outfile, output.get_jsonvalue());
 				outfile.close();
 			} else {
