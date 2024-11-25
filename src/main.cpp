@@ -96,7 +96,7 @@ int main(int argc, char** argv) {
 		std::cout << "steiner " << triangulation.size_steiner() << std::endl;
 
 		if (OUTPUT_TRIANGULATION) {
-			data_out output(&data, &triangulation);
+			data_out output(&data, &triangulation, parameters.back());
 
 			CGAL::draw(triangulation.get_cdt());
 

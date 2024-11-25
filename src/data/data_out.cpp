@@ -7,7 +7,7 @@
 
 namespace json = boost::json;
 
-data_out::data_out(data_t *data, triangulation_t *triangulation)
+data_out::data_out(data_t *data, triangulation_t *triangulation, optim_alg_t parameters)
 {
 	this->content_type = "CG_SHOP_2025_Solution";
 	this->instance_uid = data->get_instance_uid();
@@ -19,6 +19,7 @@ data_out::data_out(data_t *data, triangulation_t *triangulation)
 	}
 	this->edges = triangulation->get_edges();
 	this->obtuse_count = triangulation->size_obtuse();
+	this->parameters = parameters;
 }
 
 boost::json::value data_out::get_jsonvalue()
@@ -52,6 +53,37 @@ boost::json::value data_out::get_jsonvalue()
 	}
 
 	ret.as_object().emplace("obtuse_count", this->obtuse_count);
+
+	if (this->parameters.method == om_ls
+		|| this->parameters.method == om_sa
+		|| this->parameters.method == om_ant)
+	{
+		boost::json::object parameters;
+		switch (this->parameters.method) {
+			case om_ls:
+				ret.as_object().emplace("method", "ls");
+				parameters.emplace("L", this->parameters.L);
+				break;
+			case om_sa:
+				ret.as_object().emplace("method", "sa");
+				parameters.emplace("L", this->parameters.L);
+				parameters.emplace("a", this->parameters.a);
+				parameters.emplace("b", this->parameters.b);
+				break;
+			case om_ant:
+				ret.as_object().emplace("method", "ant");
+				parameters.emplace("L", this->parameters.L);
+				parameters.emplace("a", this->parameters.a);
+				parameters.emplace("b", this->parameters.b);
+				parameters.emplace("xi", this->parameters.xi);
+				parameters.emplace("psi", this->parameters.psi);
+				parameters.emplace("lambda", this->parameters.lambda);
+				parameters.emplace("kappa", this->parameters.kappa);
+				break;
+		}
+		ret.as_object().emplace("parameters", parameters);
+
+	}
 
 	return ret;
 }
