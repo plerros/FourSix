@@ -204,7 +204,9 @@ static inline bool detect_nottried(
 	CDT::Face_iterator *it,
 	K::Triangle_2 triangle)
 {
-	//return true;
+	if (tried == NULL)
+		return true;
+
 	if (tried->find(triangle_to_tuple(triangle)) == tried->end())
 		return true;
 
@@ -232,7 +234,7 @@ void triangulation_t::steiner_centroid(
 		
 		if (!detect_obtuse(&(this->cdt), &it, triangle))
 			continue;
-		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+		if ((this->tried != NULL) && !detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
 		std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
@@ -251,7 +253,7 @@ void triangulation_t::steiner_circumcenter(
 		auto triangle = this->cdt.triangle(it);
 		if (!detect_obtuse(&(this->cdt), &it, triangle))
 			continue;
-		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+		if ((this->tried != NULL) && !detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
 		std::pair<K::Triangle_2, std::vector<CDT::Point>> solution;
@@ -404,7 +406,7 @@ void triangulation_t::steiner_projection_internal(
 		auto triangle = this->cdt.triangle(it);
 		if (!detect_obtuse(&(this->cdt), &it, triangle))
 			continue;
-		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+		if ((this->tried != NULL) && !detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
 		std::array <CGAL::Vector_2<K>, 3> edge;
@@ -494,7 +496,8 @@ void triangulation_t::steiner_projection_inward(
 	for (size_t i = 0; i < local.size(); i++) {
 		for (size_t j = 0; j < local[i].second.size(); j++) {
 			this->insert(local[i].second[j], method);
-			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
+			if (this->tried != NULL)
+				(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
 			print_st_method(method);
 			if (this->obtuse == 0)
@@ -521,7 +524,8 @@ void triangulation_t::steiner_projection_outward(
 	for (size_t i = 0; i < local.size(); i++) {
 		for (size_t j = 0; j < local[i].second.size(); j++) {
 			this->insert(local[i].second[j], method);
-			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
+			if (this->tried != NULL)
+				(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
 			print_st_method(method);
 			if (this->obtuse == 0)
@@ -549,7 +553,8 @@ void triangulation_t::steiner_projection(
 	for (size_t i = 0; i < local.size(); i++) {
 		for (size_t j = 0; j < local[i].second.size(); j++) {
 			this->insert(local[i].second[j], method);
-			(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
+			if (this->tried != NULL)
+				(*(this->tried))[method].insert(triangle_to_tuple(local[i].first));
 
 			print_st_method(method);
 			if (this->obtuse == 0)
@@ -588,7 +593,7 @@ void triangulation_t::steiner_neighbor_random(
 
 		if (!detect_obtuse(&(this->cdt), &it, triangle))
 			continue;
-		if (!detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
+		if ((this->tried != NULL) && !detect_nottried(&(this->cdt), &((*(this->tried))[method]), &it, triangle))
 			continue;
 
 		size_t area = std::round(CGAL::to_double(triangle.area()));
@@ -731,7 +736,8 @@ void triangulation_t::steiner_add(const int method, bool randomize, size_t max)
 
 
 	for (size_t i = 0; i < solutions.size(); i++) {
-		(*(this->tried))[method].insert(triangle_to_tuple(solutions[i].first));
+		if (this->tried != NULL)
+			(*(this->tried))[method].insert(triangle_to_tuple(solutions[i].first));
 
 		for (size_t j = 0; j < solutions[i].second.size(); j++) {
 			triangulation_t current = *this;

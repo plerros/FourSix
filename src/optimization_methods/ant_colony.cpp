@@ -165,6 +165,7 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 
 			triangulation_t tmp(&dummy_data);
 			tmp.set_progression_check(progression_less_equal);
+			tmp.tried = NULL;
 			tmp.steiner_add(method);
 
 			// Find which point got added to the triangulation
