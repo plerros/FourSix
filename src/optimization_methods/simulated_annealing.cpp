@@ -31,7 +31,7 @@ void triangulation_t::optim_simulated_annealing(optim_alg_t parameters)
 		double delta_energy = current.get_energy(parameters) - this->get_energy(parameters);
 
 		// Metropolis Criterion
-		double random = 1.0 / ((double) std::rand());
+		double random = ((double) std::rand()) / ((double) RAND_MAX);
 		double probability = std::exp(- delta_energy / temperature);
 
 		if ( delta_energy < 0 || random < probability) {
