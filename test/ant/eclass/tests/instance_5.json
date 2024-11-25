@@ -51,6 +51,6 @@
         ]
     ],
 	"delaunay": true,
-	"method": "sa",
+	"method": "ant",
 	"parameters": {"L": 10, "alpha":5.0, "beta":0.2, "xi": 1.0, "psi": 3.0, "labmda": 0.5, "kappa": 10}
 }
