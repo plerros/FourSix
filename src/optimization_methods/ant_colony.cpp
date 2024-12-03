@@ -5,6 +5,24 @@
 #include "helper.hpp"
 #include "triangulation.hpp"
 
+static inline size_t count_obtuse_neighbors(
+	CDT *cdt,
+	CDT::Face_iterator *it,
+	K::Triangle_2 triangle)
+{
+	size_t ret = 0;
+	for (size_t i = 0; i < 3; i++) {
+		auto neighbor = (*it)->neighbor(i);
+		if (cdt->is_infinite(neighbor))
+			continue;
+
+		K::Triangle_2 tmp = cdt->triangle(neighbor);
+		if(is_obtuse(tmp))
+			ret++;
+	}
+	return ret;
+}
+
 const std::array st_ant = {
 	st_circumcenter,
 	st_projection,
@@ -74,12 +92,16 @@ static int random_method(
 	K::Triangle_2 triangle,
 	double *pherormones,
 	const double pherormone_constant,
-	const double heuristic_constant)
+	const double heuristic_constant,
+	size_t obtuse_neighbors)
 {
 	double radius_to_height = get_radius_to_height(triangle);
 
 	double heuristic[st_end];
 	init_heuristic(heuristic, radius_to_height);
+
+	if (obtuse_neighbors > 1)
+		heuristic[st_polygon_centroid] = 1.0;
 
 	double probability[st_end]; // NOT AN ACTUAL PROBABILTY, stretching the terms here
 	for (size_t i = 0; i < st_end; i++)
@@ -144,6 +166,7 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 
 			// TODO rewrite to improve complexity
 			K::Triangle_2 triangle;
+			size_t obtuse_neighbors = 0;
 			while (1) {
 				const size_t random_id = std::rand() % face_count;
 
@@ -153,10 +176,11 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 				triangle = this->cdt.triangle(it);
 				if (!is_obtuse(triangle))
 					continue;
+				obtuse_neighbors = count_obtuse_neighbors(&(this->cdt), &it, triangle);
 				if (this->data->inside(CGAL::centroid(triangle)))
 					break;
 			}
-			const int method = random_method(triangle, pherormones, pherormone_constant, heuristic_constant);
+			const int method = random_method(triangle, pherormones, pherormone_constant, heuristic_constant, obtuse_neighbors);
 			local.method = method;
 
 			// Workaround to generate steiner points for just the current triangle
