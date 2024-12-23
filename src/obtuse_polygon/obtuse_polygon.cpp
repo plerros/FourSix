@@ -139,7 +139,7 @@ void obtuse_polygon_t::recompute_polygon()
 		auto next = current;
 		next++;
 		if (next == this->boundary.end())
-			break;
+			next = this->boundary.begin();
 		
 		assert(*current != *next);
 	}

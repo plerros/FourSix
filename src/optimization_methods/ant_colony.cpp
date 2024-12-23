@@ -151,7 +151,10 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 
 	double pherormones[st_end];
 	for (size_t i = 0; i < st_end; i++)
-		pherormones[i] = 1.0;
+		pherormones[i] = 0.0;
+	
+	for (size_t i = 0; i < st_ant.size(); i++)
+		pherormones[st_ant[i]] = 1.0;
 
 	for (unsigned int cycle = 0; cycle < depth; cycle++) {
 		std::vector<ant_data_t> current;
