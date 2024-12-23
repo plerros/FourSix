@@ -42,6 +42,7 @@ class triangulation_t
 		int progression_check;
 		std::vector<int> history;
 		std::array<std::set<std::tuple<CDT::Point, CDT::Point, CDT::Point>>, st_end> *tried;
+		bool randomization;
 
 		void update_outside_obtuse();
 		void insert(CDT::Point steiner, int method);
@@ -60,6 +61,7 @@ class triangulation_t
 		CDT get_cdt();
 		std::vector<std::pair<std::string, std::string>> get_steiner_str();
 		std::vector<std::pair<size_t, size_t>> get_edges();
+		bool get_randomization();
 
 		double get_energy(optim_alg_t parameters);
 

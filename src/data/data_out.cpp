@@ -20,6 +20,7 @@ data_out::data_out(data_t *data, triangulation_t *triangulation, optim_alg_t par
 	this->edges = triangulation->get_edges();
 	this->obtuse_count = triangulation->size_obtuse();
 	this->parameters = parameters;
+	this->randomization = triangulation->get_randomization();
 }
 
 boost::json::value data_out::get_jsonvalue()
@@ -82,8 +83,9 @@ boost::json::value data_out::get_jsonvalue()
 				break;
 		}
 		ret.as_object().emplace("parameters", parameters);
-
 	}
+
+	ret.as_object().emplace("randomization", this->randomization);
 
 	return ret;
 }

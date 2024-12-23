@@ -13,6 +13,7 @@ class data_out
 		std::vector<std::pair<size_t, size_t>> edges;
 		size_t obtuse_count;
 		optim_alg_t parameters;
+		bool randomization;
 
 	public:
 		data_out(data_t *data, triangulation_t *triangulation, optim_alg_t parameters);

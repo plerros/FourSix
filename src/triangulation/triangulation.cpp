@@ -142,6 +142,8 @@ void triangulation_t::insert(CDT::Point steiner, int method)
 
 	this->steiner++;
 	this->history.push_back(method);
+	if (method == st_constraint_random || method == st_neighbor_random)
+		this->randomization = true;
 }
 
 static inline std::tuple<CDT::Point, CDT::Point, CDT::Point> triangle_to_tuple(K::Triangle_2 triangle)
@@ -862,4 +864,9 @@ double triangulation_t::get_energy(optim_alg_t parameters)
 
 	auto alg = this->data->get_alg();
 	return (parameters.a * ((double) this->obtuse) + parameters.b * ((double) this->steiner));
+}
+
+bool triangulation_t::get_randomization()
+{
+	return this->randomization;
 }
