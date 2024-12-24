@@ -27,7 +27,8 @@ const std::array st_ant = {
 	st_circumcenter,
 	st_projection,
 	st_midpoint,
-	st_centroid
+	st_centroid,
+	st_polygon_centroid
 };
 
 static double get_radius_to_height(K::Triangle_2 triangle)

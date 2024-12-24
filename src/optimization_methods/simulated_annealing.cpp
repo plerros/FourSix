@@ -7,7 +7,8 @@ const std::array st_sannealing = {
 	st_circumcenter,
 	st_projection,
 	st_midpoint,
-	st_centroid
+	st_centroid,
+	st_polygon_centroid
 };
 
 void triangulation_t::optim_simulated_annealing(optim_alg_t parameters)
