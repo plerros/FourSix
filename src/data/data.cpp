@@ -7,8 +7,95 @@
 #include <CGAL/Polygon_2.h>
 #include <CGAL/Exact_integer.h>
 
+#include <CGAL/draw_polygon_2.h> 
+
 #include "data.hpp"
 #include "data_in.hpp"
+
+enum graph_constraint_enum {
+	gconst_unconstrained,
+	gconst_circle,
+	gconst_other,
+	gconst_end
+};
+
+static bool boundary_repeats (std::vector<CDT::Point> boundary_pts)
+{
+	for (auto current = boundary_pts.begin(); current < boundary_pts.end(); current++) {
+		auto next = current;
+		next++;
+		if (next == boundary_pts.end())
+			next = boundary_pts.begin();
+		
+		if(*current == *next)
+			return true;
+	}
+	return false;
+}
+
+static bool boundary_convex (std::vector<CDT::Point> boundary_pts)
+{
+	assert(boundary_repeats(boundary_pts) == false);
+	CGAL::Polygon_2<K> polygon;
+	for (auto it = boundary_pts.begin(); it < boundary_pts.end(); it++)
+		polygon.push_back(*it);
+	
+	assert(polygon.is_simple());
+	return (polygon.is_convex());
+}
+
+static bool boundary_orthogonal (
+	std::vector<CDT::Point> boundary_pts,
+	std::vector<std::pair<CDT::Point, CDT::Point>> boundary)
+{
+	assert(boundary_repeats(boundary_pts) == false);
+	for (auto it = boundary.begin(); it < boundary.end(); it++) {
+		if (it->first.x() == it->second.x())
+			continue;
+		if (it->first.y() == it->second.y())
+			continue;
+		return false;
+	}
+	return true;
+}
+
+static bool graph_cycle (std::vector<std::pair<CDT::Point, CDT::Point>> edges)
+{
+	std::set<CDT::Point> visited;
+	std::vector<CDT::Point> current_boundary;
+	auto not_visited = edges;
+
+	while (not_visited.size() > 0) {
+		if (current_boundary.size() == 0) {
+			current_boundary.push_back(not_visited.back().first);
+			visited.insert(current_boundary[0]);
+		}
+		std::vector<CDT::Point> next;
+
+		for (auto it = current_boundary.begin(); it < current_boundary.end(); it++) {
+			std::vector<std::pair<CDT::Point, CDT::Point>> tmp;
+			for (auto it2 = not_visited.begin(); it2 < not_visited.end(); it2++) {				
+				if (it2->first == *it) {
+					next.push_back(it2->second);
+				}
+				else if (it2->second == *it) {
+					next.push_back(it2->first);
+				}
+				else {
+					tmp.push_back(*it2);
+					continue;
+				}
+
+				if (visited.find(next.back()) != visited.end())
+					return true;
+				visited.insert(next.back());
+			}
+			not_visited = tmp;
+		}
+		current_boundary = next;
+	}
+	return false;
+}
 
 data_t::data_t(data_in d)
 {
@@ -85,6 +172,55 @@ data_t::data_t(data_in d)
 	for (auto it = this->constraints.begin(); it < this->constraints.end(); it++)
 		this->constraint_mid_pts.push_back(CGAL::midpoint(it->first, it->second));
 
+	// Categorize input geometry
+	bool convex = boundary_convex(this->boundary_pts);
+	bool orthogonal = boundary_orthogonal(this->boundary_pts, this->boundary);
+	int constraints_category = gconst_other;
+
+	if (this->constraints.size() == 0) {
+		constraints_category = gconst_unconstrained;
+	} else {
+		std::vector<std::pair<CDT::Point, CDT::Point>> tmp = this->constraints;
+		assert(this->boundary.size() > 2);
+		//tmp.insert(tmp.end(), this->boundary.begin(), this->boundary.end() - 1);
+		if (graph_cycle(tmp))
+			constraints_category = gconst_circle;
+	}
+
+	this->category = gc_E_other;
+	if (convex) {
+		switch (constraints_category) {
+			case gconst_unconstrained:
+				this->category = gc_A_convex_simple;
+				break;
+			case gconst_other:
+				this->category = gc_B_convex_line;
+				break;
+			case gconst_circle:
+				this->category = gc_C_convex_circle;
+				break;
+		}
+	}
+	else if (orthogonal) {
+		this->category = gc_D_ortho_simple;
+	}
+
+	int category_om = om_none;
+	switch (this->category) {
+		case gc_A_convex_simple:
+			category_om = om_ls;
+	/*
+		case gc_B_convex_line:
+			category_om = om_ls;
+		case gc_C_convex_circle:
+			category_om = om_ls;
+		case gc_D_ortho_simple:
+			category_om = om_ls;
+		case gc_E_other:
+			category_om = om_ls;
+	*/
+	}
+
 	optim_alg_t default_val;
 	default_val.method = om_none;
 	default_val.a = 1.0;
@@ -100,31 +236,34 @@ data_t::data_t(data_in d)
 		this->alg.push_back(tmp);
 	}
 
-	if (d.get_optim_method() == "ls") {
+	{
 		auto tmp = default_val;
-		tmp.method = om_ls;
-		tmp.L      = d.get_parameter_L();
-		this->alg.push_back(tmp);
-	}
-	if (d.get_optim_method() == "sa") {
-		auto tmp = default_val;
-		tmp.method = om_sa;
-		tmp.a      = d.get_parameter_a();
-		tmp.b      = d.get_parameter_b();
-		tmp.L      = d.get_parameter_L();
-		this->alg.push_back(tmp);
-	}
-	if (d.get_optim_method() == "ant") {
-		auto tmp = default_val;
-		tmp.method = om_ant;
-		tmp.a      = d.get_parameter_a();
-		tmp.b      = d.get_parameter_b();
-		tmp.xi     = d.get_parameter_xi();
-		tmp.psi    = d.get_parameter_psi();
-		tmp.lambda = d.get_parameter_lambda();
-		tmp.kappa  = d.get_parameter_kappa();
-		tmp.L      = d.get_parameter_L();
-		this->alg.push_back(tmp);
+		if (d.get_optim_method() == "ls")
+			tmp.method = om_ls;
+		else if (d.get_optim_method() == "sa")
+			tmp.method = om_sa;
+		else if (d.get_optim_method() == "ant")
+			tmp.method = om_ant;
+		else
+			tmp.method = category_om;
+
+		switch (tmp.method) {
+			case om_ant:
+				tmp.xi     = d.get_parameter_xi();
+				tmp.psi    = d.get_parameter_psi();
+				tmp.lambda = d.get_parameter_lambda();
+				tmp.kappa  = d.get_parameter_kappa();
+				// Allow fall through
+			case om_sa:
+				tmp.a      = d.get_parameter_a();
+				tmp.b      = d.get_parameter_b();
+				// Allow fall through
+			case om_ls:
+				tmp.L      = d.get_parameter_L();
+				this->alg.push_back(tmp);
+			case om_none:
+				break;
+		}
 	}
 }
 
@@ -200,4 +339,9 @@ bool data_t::on_boundary(CDT::Point pt)
 std::vector<optim_alg_t> data_t::get_alg()
 {
 	return this->alg;
+}
+
+int data_t::get_category()
+{
+	return this->category;
 }

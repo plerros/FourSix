@@ -24,6 +24,15 @@ class optim_alg_t {
 		unsigned int L;
 };
 
+enum graph_category {
+	gc_A_convex_simple,
+	gc_B_convex_line,
+	gc_C_convex_circle,
+	gc_D_ortho_simple,
+	gc_E_other,
+	gc_end
+};
+
 class data_t
 {
 	private:
@@ -40,6 +49,8 @@ class data_t
 		CGAL::Polygon_2<K> boundary_pgn;
 
 		std::vector<optim_alg_t> alg;
+
+		int category;
 
 	public:
 		data_t(data_in d);
@@ -58,4 +69,6 @@ class data_t
 		void final_triangulation();
 
 		std::vector<optim_alg_t> get_alg();
+
+		int get_category();
 };
