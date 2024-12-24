@@ -3,6 +3,14 @@
 #include "helper.hpp"
 #include "triangulation.hpp"
 
+const std::array st_lsearch = {
+	st_circumcenter,
+	st_projection,
+	st_midpoint,
+	st_centroid,
+	st_polygon_centroid
+};
+
 void triangulation_t::optim_local_search(optim_alg_t parameters)
 {
 	const unsigned int depth = parameters.L;
@@ -16,8 +24,8 @@ void triangulation_t::optim_local_search(optim_alg_t parameters)
 			std::cerr << i << std::endl;
 		}
 		triangulation_t best = *this;
-		for (int j = 0; i < st_active.size(); j++) {
-			int method = st_active[j];
+		for (int j = 0; j < st_lsearch.size(); j++) {
+			int method = st_lsearch[j];
 			// prevent projection_all from running after projection.
 			if (method == st_projection_all
 				&& this->history.size() > 0
