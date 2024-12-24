@@ -1,0 +1,17 @@
+{
+	"instance_uid": "nested_squares1",
+	"num_points": 8,
+	"points_x": [0, 20, 20, 0,  5, 15, 15, 5],
+	"points_y": [0, 0,  20, 20, 5, 5,  15, 15],
+	"region_boundary": [0,1,2,3],
+	"num_constraints": 4,
+	"additional_constraints": [
+		[4,5],
+		[5,6],
+		[6,7],
+		[7,4]
+	],
+	"delaunay": true,
+	"method": "ant",
+	"parameters": {"L": 100, "alpha":5.0, "beta":0.2, "xi": 1.0, "psi": 3.0, "lambda": 0.5, "kappa": 10}
+}

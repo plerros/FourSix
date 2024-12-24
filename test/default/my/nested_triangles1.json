@@ -1,0 +1,13 @@
+{
+	"instance_uid": "nested_triangles1",
+	"num_points": 6,
+	"points_x": [0, 20, 10, 2, 18, 10],
+	"points_y": [0, 0,  10, 1, 1,  9],
+	"region_boundary": [0,1,2],
+	"num_constraints": 3,
+	"additional_constraints": [
+		[3,4],
+		[4,5],
+		[5,3]
+	]
+}
