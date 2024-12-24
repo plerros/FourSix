@@ -8,5 +8,5 @@
 	"additional_constraints": [
 	],
 	"method": "ls",
-	"parameters": {"L": 500}
+	"parameters": {"L": 100}
 }
