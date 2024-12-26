@@ -187,26 +187,33 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 			const int method = random_method(triangle, pherormones, pherormone_constant, heuristic_constant, obtuse_neighbors);
 			local.method = method;
 
-			// Workaround to generate steiner points for just the current triangle
-			data_t dummy_data(triangle, parameters);
-			std::vector<CDT::Point> steiner_pts;
+			if (method == st_polygon_centroid) { 
+				// Apply to entire triangulation
+				local.triangulation.steiner_add(method);
 
-			triangulation_t tmp(&dummy_data);
-			tmp.set_progression_check(progression_less_equal);
-			tmp.tried = NULL;
-			tmp.steiner_add(method);
+			} else {
+				// Apply to single triangle
 
-			// Find which point got added to the triangulation
-			for (auto it = tmp.cdt.finite_vertices_begin(); it != tmp.cdt.finite_vertices_end(); it++) {
-				CDT::Point pt(it->point());
-				if (pt == triangle.vertex(0) || pt == triangle.vertex(1) || pt == triangle.vertex(2))
-					continue;
-				steiner_pts.push_back(pt);
+				// Workaround to generate steiner points for just the current triangle
+				data_t dummy_data(triangle, parameters);
+				std::vector<CDT::Point> steiner_pts;
+
+				triangulation_t tmp(&dummy_data);
+				tmp.set_progression_check(progression_less_equal);
+				tmp.tried = NULL;
+				tmp.steiner_add(method);
+
+				// Find which point got added to the triangulation
+				for (auto it = tmp.cdt.finite_vertices_begin(); it != tmp.cdt.finite_vertices_end(); it++) {
+					CDT::Point pt(it->point());
+					if (pt == triangle.vertex(0) || pt == triangle.vertex(1) || pt == triangle.vertex(2))
+						continue;
+					steiner_pts.push_back(pt);
+				}
+				
+				for (size_t i = 0; i < steiner_pts.size(); i++)
+					local.triangulation.insert(steiner_pts[i], method);
 			}
-			
-			for (size_t i = 0; i < steiner_pts.size(); i++)
-				local.triangulation.insert(steiner_pts[i], method);
-
 			// Evaluate triangulation (ant)
 			local.delta_energy = local.triangulation.get_energy(parameters) - this->get_energy(parameters);
 			current.push_back(local);
@@ -222,6 +229,12 @@ void triangulation_t::optim_ant_colony(optim_alg_t parameters)
 			}
 		}
 		(*this) = best_ant.triangulation;
+
+		if (this->obtuse > best_ant.triangulation.obtuse)
+			(*this) = best_ant.triangulation;
+		else
+			this->steiner_add(st_neighbor_random);
+
 
 		// Update pherormones (cycle)
 		pherormones[best_ant.method] *= 1.0 - evaporation_rate;
