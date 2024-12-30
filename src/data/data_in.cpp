@@ -75,7 +75,8 @@ skip_additional_constraints:
 		auto tmp = jv.at("method").as_string();
 		assert(tmp == "ls"
 			|| tmp == "sa"
-			|| tmp == "ant");
+			|| tmp == "ant"
+			|| tmp == "auto");
 		this->optim_method = tmp;
 	}
 

@@ -244,7 +244,7 @@ data_t::data_t(data_in d)
 			tmp.method = om_sa;
 		else if (d.get_optim_method() == "ant")
 			tmp.method = om_ant;
-		else
+		else if (d.get_optim_method() == "auto")
 			tmp.method = category_om;
 
 		switch (tmp.method) {
