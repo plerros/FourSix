@@ -14,8 +14,8 @@ while read filename; do
 
 	if [ "$dir_name" != "$prevdir" ]; then
 		echo "## ${dir_name/$SCRIPT_DIR/""}" >> results.md
-		echo "| name | input obtuse | output obtuse | steiner | seconds |" >> results.md
-		echo "| --- | --- | --- | --- | --- |" >> results.md
+		echo "| name | input obtuse | output obtuse | steiner | seconds | convergence |" >> results.md
+		echo "| --- | --- | --- | --- | --- | --- |" >> results.md
 		prevdir=$dir_name
 	fi
 	
@@ -26,8 +26,9 @@ while read filename; do
 	steiner=$( cat $resultname | grep -o 'steiner [[:digit:]]*' | grep -o '[[:digit:]]*' )
 	ms=$( cat $resultname | grep -o 'ms [[:digit:]]*' | grep -o '[[:digit:]]*' )
 	ms=$( echo "scale=2; $ms/1000" | bc -l )
-	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms |" >> results.md
-	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms |"
+	convergence_average=$( cat $resultname | grep -o 'convergence_average [[:digit:]]*\.[[:digit:]]*' | grep -o '[[:digit:]]*\.[[:digit:]]*' )
+	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms | $convergence_average |" >> results.md
+	echo "| $base_name | $input_obtuse | $obtuse | $steiner | $ms | $convergence_average |"
 	rm "$resultname"
 done < findjson.tmp
 
