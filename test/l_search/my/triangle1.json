@@ -7,6 +7,7 @@
 	"num_constraints": 0,
 	"additional_constraints": [
 	],
+	"delaunay": true,
 	"method": "ls",
-	"parameters": {"L": 100}
+	"parameters": {"L": 100  }
 }

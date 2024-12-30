@@ -1,0 +1,13 @@
+{
+	"instance_uid": "arrow1",
+	"num_points": 4,
+	"points_x": [0, 2, 4, 2],
+	"points_y": [0, 1, 0, 2],
+	"region_boundary": [0, 1, 2, 3],
+	"num_constraints": 0,
+	"additional_constraints": [
+	],
+	"delaunay": true,
+	"method": "ls",
+	"parameters": {"L": 100  }
+}

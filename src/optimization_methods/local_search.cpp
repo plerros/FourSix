@@ -41,7 +41,11 @@ void triangulation_t::optim_local_search(optim_alg_t parameters)
 			if (this->progression_check == progression_less_equal
 				&& (current.obtuse <= best.obtuse))
 				best = current;
-			}
-		*this = best;
+		}
+		if (this->obtuse > best.obtuse) {
+			*this = best;
+		} else {
+			this->steiner_add(st_neighbor_random);
+		}
 	}
 }
