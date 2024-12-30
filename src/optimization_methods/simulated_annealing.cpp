@@ -11,6 +11,8 @@ const std::array st_sannealing = {
 	st_polygon_centroid
 };
 
+#define SA_RANDOM 2
+
 void triangulation_t::optim_simulated_annealing(optim_alg_t parameters)
 {
 	const double obtuse_constant  = parameters.a;
@@ -35,10 +37,28 @@ void triangulation_t::optim_simulated_annealing(optim_alg_t parameters)
 		double random = ((double) std::rand()) / ((double) RAND_MAX);
 		double probability = std::exp(- delta_energy / temperature);
 
-		if ( delta_energy < 0 || random < probability) {
+#ifndef SA_RANDOM
+		if (delta_energy < 0 || random < probability) {
 			*this = current;
 		}
 
+#elif SA_RANDOM == 1	// attempt 1
+		if (delta_energy < 0 || random < probability) {
+			*this = current;
+		} else {
+			this->steiner_add(st_constraint_random);
+			this->steiner_add(st_neighbor_random, true, 1);
+		}
+
+#elif SA_RANDOM == 2	// attempt 2
+		if (delta_energy < 0) {
+			*this = current;
+		}
+		else if (random < probability) {
+			//this->steiner_add(st_constraint_random);
+			this->steiner_add(st_neighbor_random);
+		}
+#endif
 		temperature = temperature - (1.0 / ((double) depth));
 	}
 }
