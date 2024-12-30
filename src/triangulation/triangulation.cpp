@@ -83,6 +83,8 @@ triangulation_t::triangulation_t(data_t *data)
 	this->update_outside_obtuse();
 	this->steiner = 0;
 	this->progression_check = progression_less;
+	this->insert_calls = 0;
+	this->convergence_sum = 0.0;
 
 	this->tried = &global_tried;
 }
@@ -116,8 +118,18 @@ static inline bool never_on_boundary(int method)
 	}
 }
 
+static inline double calculate_convergence(double obtuse_before, double obtuse_after, double steiner_before)
+{
+	//return log(obtuse_after/obtuse_before)/log(1.0 + (1.0/steiner_before));
+	return log(obtuse_before/obtuse_after)/log(1.0 + (1.0/steiner_before));
+}
+
 void triangulation_t::insert(CDT::Point steiner, int method)
 {
+	this->insert_calls++;
+	size_t obtuse_before = this->obtuse;
+	size_t steiner_before = this->steiner;
+
 	// If we are sure the point won't be on the boundary, use a faster method
 	if (never_on_boundary(method)) {
 		if (!this->data->inside(steiner))
@@ -141,6 +153,7 @@ void triangulation_t::insert(CDT::Point steiner, int method)
 	}
 
 	this->steiner++;
+	this->convergence_sum += calculate_convergence(obtuse_before, this->obtuse, this->steiner);
 	this->history.push_back(method);
 	if (method == st_constraint_random || method == st_neighbor_random)
 		this->randomization = true;
@@ -869,4 +882,13 @@ double triangulation_t::get_energy(optim_alg_t parameters)
 bool triangulation_t::get_randomization()
 {
 	return this->randomization;
+}
+
+double triangulation_t::get_convergence_average()
+{
+	double N = this->insert_calls;
+	if (N < 2.0)
+		N = 2.0;
+	
+	return (this->convergence_sum/(N-1.0));
 }

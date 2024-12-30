@@ -94,6 +94,7 @@ int main(int argc, char** argv) {
 
 		std::cout << "obtuse " << triangulation.size_obtuse() << std::endl;
 		std::cout << "steiner " << triangulation.size_steiner() << std::endl;
+		std::cout << "convergence_average " << triangulation.get_convergence_average() << std::endl;
 
 		if (OUTPUT_TRIANGULATION) {
 			data_out output(&data, &triangulation, parameters.back());
