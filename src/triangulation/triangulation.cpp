@@ -121,7 +121,7 @@ static inline bool never_on_boundary(int method)
 static inline double calculate_convergence(double obtuse_before, double obtuse_after, double steiner_before)
 {
 	//return log(obtuse_after/obtuse_before)/log(1.0 + (1.0/steiner_before));
-	return log(obtuse_before/obtuse_after)/log(1.0 + (1.0/steiner_before));
+	return abs(log(obtuse_after/obtuse_before)/log(1.0 + (1.0/steiner_before)));
 }
 
 void triangulation_t::insert(CDT::Point steiner, int method)
