@@ -208,17 +208,20 @@ data_t::data_t(data_in d)
 	int category_om = om_none;
 	switch (this->category) {
 		case gc_A_convex_simple:
-			category_om = om_ls;
-	/*
+			category_om = om_ant;
+			break;
 		case gc_B_convex_line:
-			category_om = om_ls;
+			category_om = om_ant;
+			break;
 		case gc_C_convex_circle:
-			category_om = om_ls;
+			category_om = om_ant;
+			break;
 		case gc_D_ortho_simple:
-			category_om = om_ls;
+			category_om = om_ant;
+			break;
 		case gc_E_other:
-			category_om = om_ls;
-	*/
+			category_om = om_ant;
+			break;
 	}
 
 	optim_alg_t default_val;

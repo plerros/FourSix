@@ -20,7 +20,8 @@ while read filename; do
 	fi
 	
 	resultname=./"$base_name".result
-	timeout 100s ./FourSix -i "$filename" > "$resultname"
+	#timeout 100s ./FourSix -i "$filename" > "$resultname"
+	./FourSix -i "$filename" > "$resultname"
 	input_obtuse=$( cat $resultname | grep -o 'Input Obtuse: [[:digit:]]*' | grep -o '[[:digit:]]*' )
 	obtuse=$( cat $resultname | grep -o 'obtuse [[:digit:]]*' | grep -o '[[:digit:]]*' )
 	steiner=$( cat $resultname | grep -o 'steiner [[:digit:]]*' | grep -o '[[:digit:]]*' )
